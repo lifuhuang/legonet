@@ -8,7 +8,7 @@ Created on Sat Apr 23 23:17:39 2016
 
 import tensorflow as tf
 
-from . import initializations
+from . import initializers
 from . import activations
 from . import objectives
 
@@ -40,8 +40,9 @@ class FullyConnected(Layer):
     """
     
     
-    def __init__(self, size, name=None, activation='identity', 
-                 W_init='xavier', b_init='constant', has_bias=True):
+    def __init__(self, size, name=None, activation_fn=None, 
+                 weight_init='xavier', bias_init='constant', 
+                 weight_reg=None, bias_reg=None, has_bias=True):
         """Initializes a new FullyConnected instance.
         """
         
@@ -52,63 +53,95 @@ class FullyConnected(Layer):
         self.b = None
         self.output = None
         
-        self._z = None
-        self._activation = activations.get(activation) or activation
-        self._W_init = initializations.get(W_init) or W_init
-        self._b_init = initializations.get(b_init) or W_init
+        self._activation_fn = activations.get(activation_fn) or activation_fn
+        self._weight_init = initializers.get(weight_init) or weight_init
+        self._bias_init = initializers.get(bias_init) or weight_init
+        self._weight_reg = weight_reg
+        self._bias_reg = bias_reg
         
     def build(self, prev_layer):
         """Construct the layer in tensorflow graph.
         """
         
         self.prev_layer = prev_layer
-        with tf.variable_scope(self.name):   
-            self.W = tf.get_variable('W', [self.prev_layer.size, self.size], 
-                                     initializer=self._W_init())
-            if self.has_bias:
-                self.b = tf.get_variable('b', [self.size], 
-                                         initializer=self._b_init())
+        with tf.variable_scope(self.name):
+            with tf.variable_scope('affine_transformation'):
+                self.W = tf.get_variable('W', 
+                                         [self.prev_layer.size, self.size], 
+                                         initializer=self._weight_init(),
+                                         regularizer=self._weight_reg)
+                if self.has_bias:
+                    self.b = tf.get_variable('b', [self.size], 
+                                             initializer=self._bias_init(),
+                                             regularizer=self._bias_reg)
             
-            self._z = tf.matmul(prev_layer.output, self.W)
-            if self.has_bias:
-                self._z = tf.add(self._z, self.b)
+                self.output = tf.matmul(prev_layer.output, self.W)
+                if self.has_bias:
+                    self.output = tf.add(self.output, self.b)
             
-            self.output = self._activation(self._z)    
+            with tf.variable_scope('activation_function'):
+                if self._activation_fn is not None:
+                    self.output = self._activation_fn(self.output)
             
-class Output(FullyConnected):
-    """Output layer.
+class Output(Layer):
+    """Output layer that wraps around another layer.
     """
     
     
-    def __init__(self, objective, dtype, scalar_target=False, **kwargs):
+    def __init__(self, size, name, dtype, scalar_output=False,
+                 output_fn=None, loss_fn=None, inner_layer=None, **kwargs):
         """Initializes a new Output instance.
         """
         
-        super(Output, self).__init__(**kwargs)
+        super(Output, self).__init__(size, name)
+        
+        if output_fn is None:
+            output_fn = 'softmax'
+            
+        if loss_fn is None:        
+            loss_fn = 'sparse_softmax_cross_entropy'
+        
+        if inner_layer is None:
+            self.inner_layer = FullyConnected(size, 'inner_layer', **kwargs)
+        else:
+            self.inner_layer = inner_layer
+        
+        self.size = size
+        self.name = name
+        self.dtype = dtype
+        self.scalar_output = scalar_output
+        self._output_fn = activations.get(output_fn) or output_fn
+        self._loss_fn = objectives.get(loss_fn) or loss_fn
+        
         self.loss = None
-        self.labels = None
-        self.dtype=dtype
-        self.scalar_target = scalar_target
-        self._objective = objectives.get(objective) or objective
+        self.targets = None
+        self.output = None
         
     def build(self, prev_layer):
         """Construct the layer in tensorflow graph.
         """
         
-        super(Output, self).build(prev_layer)
         with tf.variable_scope(self.name):
-            shape = [None]
-            if not self.scalar_target:
-                shape += [self.size]
-            self.targets = tf.placeholder(self.dtype, shape, 'targets')
-            self.loss = self._objective(self._z, self.targets)
-        
+            self.inner_layer.build(prev_layer)            
+            with tf.variable_scope('output'):
+                self.output = self._output_fn(self.inner_layer.output)
+            with tf.variable_scope('loss'):            
+                if self.scalar_output:
+                    target_shape = [None]
+                else:
+                    target_shape = [None, self.size]
+                    
+                self.targets = tf.placeholder(self.dtype, 
+                                              target_shape, 'targets')
+                self.loss = self._loss_fn(self.inner_layer.output, 
+                                          self.targets)
+
 class Input(Layer):
     """Input layer.
     """
     
         
-    def __init__(self, size, name=None, dtype=tf.float32):
+    def __init__(self, size, name, dtype=tf.float32):
         """Initializes a new Input instance.
         """
         
@@ -119,6 +152,7 @@ class Input(Layer):
         """Construct the layer in tensorflow graph.
         """
         
-        self.output = tf.placeholder(self.dtype, [None, self.size], 'input')
-                                     
+        with tf.variable_scope(self.name):
+            self.output = tf.placeholder(self.dtype, 
+                                         [None, self.size], 'input')
                                      
