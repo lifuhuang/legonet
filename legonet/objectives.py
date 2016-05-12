@@ -19,18 +19,29 @@ def sparse_softmax_cross_entropy(logits, labels):
     """Cross-entropy error for softmax output layer with one-hot target.
     """
     
-    return tf.reduce_mean(
-        tf.nn.sparse_softmax_cross_entropy_with_logits(logits, labels))
+    return tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+        logits, tf.squeeze(labels)))
 
-def mean_square_error(output, labels):
+def sigmoid_cross_entropy(logits, targets):
+    """Cross-entropy error for sigmoid output layer.
+    """
+    
+    return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        tf.squeeze(logits), tf.squeeze(targets)))
+
+def mean_square(output, labels):
     """Mean square error.
     """
     
-    return tf.reduce_mean(tf.reduce_sum((output - labels) ** 2))
+    print 'output', output
+    print 'labels', labels
+    print 'loss', tf.reduce_mean((output - labels) ** 2)
+    return tf.reduce_mean((output - labels) ** 2)
     
 _objectives = {'softmax_cross_entropy': softmax_cross_entropy,
                'sparse_softmax_cross_entropy': sparse_softmax_cross_entropy,
-               'mean_square_error': mean_square_error}
+               'mean_square': mean_square,
+               'sigmoid_cross_entropy': sigmoid_cross_entropy}
 
 def get(name):
     """Return objective according to name.

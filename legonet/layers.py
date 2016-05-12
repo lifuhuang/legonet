@@ -88,8 +88,9 @@ class Output(Layer):
     """
     
     
-    def __init__(self, size, name, dtype, scalar_output=False,
-                 output_fn=None, loss_fn=None, inner_layer=None, **kwargs):
+    def __init__(self, size, name, dtype, 
+                 output_fn=None, loss_fn=None, target_size=None,
+                 inner_layer=None, **kwargs):
         """Initializes a new Output instance.
         """
         
@@ -109,7 +110,7 @@ class Output(Layer):
         self.size = size
         self.name = name
         self.dtype = dtype
-        self.scalar_output = scalar_output
+        self.target_size = target_size or self.size
         self._output_fn = activations.get(output_fn) or output_fn
         self._loss_fn = objectives.get(loss_fn) or loss_fn
         
@@ -125,14 +126,9 @@ class Output(Layer):
             self.inner_layer.build(prev_layer)            
             with tf.variable_scope('output'):
                 self.output = self._output_fn(self.inner_layer.output)
-            with tf.variable_scope('loss'):            
-                if self.scalar_output:
-                    target_shape = [None]
-                else:
-                    target_shape = [None, self.size]
-                    
-                self.targets = tf.placeholder(self.dtype, 
-                                              target_shape, 'targets')
+            with tf.variable_scope('loss'):      
+                self.targets = tf.placeholder(
+                    self.dtype, [None, self.target_size], 'targets')
                 self.loss = self._loss_fn(self.inner_layer.output, 
                                           self.targets)
 
