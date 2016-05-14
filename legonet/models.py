@@ -48,7 +48,7 @@ class NeuralNetwork(object):
         self.saver.restore(self.session, path)
     
     def fit(self, x, y, n_epochs=5, batch_size=32, checkpoint_dir=None, 
-            randomized=True, freq_compute_loss=100, freq_checkpoint=10000,
+            randomized=True, freq_log=100, freq_checkpoint=10000,
             loss_decay=0.0):
         """Train this model using x and y.
         """
@@ -87,7 +87,7 @@ class NeuralNetwork(object):
                              
                 _, step = self.session.run(fetches, feed_dict=feed_dict)
                 
-                if step % freq_compute_loss == 0:
+                if step % freq_log == 0:
                     fetches = [self.merged_summaries, self.loss]
                     summary, batch_loss = self.session.run(fetches, feed_dict)
 
@@ -156,8 +156,16 @@ class NeuralNetwork(object):
             self.update_op = self.optimizer.minimize(
                 self.loss, global_step=self.global_step)
             
+            # summaries
+            for layer in self.layers:
+                tf.histogram_summary(
+                    '{0} activation'.format(layer.name), layer.output)
+                tf.scalar_summary(
+                    '{0} sparsity'.format(layer.name), 
+                    tf.nn.zero_fraction(layer.output))
             tf.scalar_summary("Loss", self.loss)
             self.merged_summaries = tf.merge_all_summaries()
+            
             self.session.run(tf.initialize_all_variables())
             self.saver = tf.train.Saver()
             self.graph.finalize()
