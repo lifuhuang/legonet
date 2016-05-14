@@ -47,4 +47,6 @@ def get(name):
     """Return objective according to name.
     """
     
-    return _objectives.get(name, None)
+    if name not in _objectives:
+        raise ValueError('Unknown objective function: {0}'.format(name))
+    return _objectives[name]

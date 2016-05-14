@@ -41,11 +41,17 @@ class FullyConnected(Layer):
     
     
     def __init__(self, name, n_output_units, activation_fn=None, 
-                 weight_init='xavier', bias_init='constant', 
-                 weight_regularizer=None, bias_regularizer=None, has_bias=True):
+                 weight_init=None, bias_init=None, 
+                 weight_regularizer=None, bias_regularizer=None, 
+                 has_bias=True):
         """Initializes a new FullyConnected instance.
         """
         
+        if weight_init is None:
+            weight_init = initializers.xavier()
+        if bias_init is None:
+            bias_init = initializers.constant()
+            
         super(FullyConnected, self).__init__(name)
         
         self.n_output_units = n_output_units
@@ -53,9 +59,21 @@ class FullyConnected(Layer):
         self.W = None
         self.b = None
         
-        self._activation_fn = activations.get(activation_fn) or activation_fn
-        self._weight_init = initializers.get(weight_init) or weight_init
-        self._bias_init = initializers.get(bias_init) or weight_init
+        if isinstance(activation_fn, str):            
+            self._activation_fn = activations.get(activation_fn)
+        else:
+            self._activation_fn = activation_fn
+            
+        if isinstance(weight_init, str):     
+            self._weight_init = initializers.get(weight_init)
+        else:
+            self._weight_init = weight_init
+        
+        if isinstance(bias_init, str):
+            self._bias_init = initializers.get(bias_init)
+        else:
+            self._bias_init = bias_init
+            
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
         
@@ -65,7 +83,6 @@ class FullyConnected(Layer):
         
         with tf.variable_scope(self.name):
             with tf.variable_scope('affine_transformation'):
-                #batch_size = prev_layer.output.get_shape()[-1].value
                 prev_size = prev_layer.output.get_shape()[1:].num_elements()
                 self.W = tf.get_variable(
                     'W', [prev_size, self.n_output_units], 
@@ -93,12 +110,17 @@ class Convolution2D(Layer):
     
     def __init__(self, name, filter_height, filter_width, n_output_channels, 
                  activation_fn='relu', strides=(1, 1), padding='SAME', 
-                 weight_init='truncated_normal', bias_init='constant', 
+                 weight_init=None, bias_init=None, 
                  weight_regularizer=None, bias_regularizer=None, 
                  use_cudnn_on_gpu=True, has_bias=True):
         """Initializes a new Convolution2D instance.
         """
         
+        if weight_init is None:
+            weight_init = initializers.truncated_normal(1e-4)
+        if bias_init is None:
+            bias_init = initializers.constant(0.1)
+            
         super(Convolution2D, self).__init__(name)
         
         self.filter_height = filter_height
@@ -112,9 +134,21 @@ class Convolution2D(Layer):
         self.filter = None
         self.bias = None
         
-        self._activation_fn = activations.get(activation_fn) or activation_fn
-        self._weight_init = initializers.get(weight_init) or weight_init
-        self._bias_init = initializers.get(bias_init) or weight_init
+        if isinstance(activation_fn, str):            
+            self._activation_fn = activations.get(activation_fn)
+        else:
+            self._activation_fn = activation_fn
+            
+        if isinstance(weight_init, str):     
+            self._weight_init = initializers.get(weight_init)
+        else:
+            self._weight_init = weight_init
+        
+        if isinstance(bias_init, str):
+            self._bias_init = initializers.get(bias_init)
+        else:
+            self._bias_init = bias_init
+            
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
         
@@ -136,7 +170,9 @@ class Convolution2D(Layer):
                 
             if self.has_bias:
                 self.bias = tf.get_variable(
-                    'bias', self.n_output_channels, initializer=self._bias_init, 
+                    'bias', 
+                    self.n_output_channels, 
+                    initializer=self._bias_init, 
                     regularizer=self._bias_regularizer)
                 self.output = tf.add(self.output, self.bias, name = 'bias')
             

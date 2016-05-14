@@ -22,4 +22,6 @@ def get(name):
     """Return activation according to name.
     """
     
-    return _activations.get(name, None)
+    if name not in _activations:
+        raise ValueError('Unknown activation function: {0}'.format(name))
+    return _activations[name]

@@ -17,7 +17,9 @@ def get(name):
     """Return a array filler according to name.
     """
     
-    return _initializers.get(name, None)
+    if name not in _initializers:
+        raise ValueError('Unknown initializer: {0}'.format(name))
+    return _initializers[name]
 
 
 _initializers = {'xavier': xavier(),
