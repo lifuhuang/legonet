@@ -13,13 +13,13 @@ from legonet.regularizers import l2
 from legonet.optimizers import Adam
 
 nn = NeuralNetwork(optimizer=Adam(), log_dir='logs')
-nn.add(Input(50, 'input', dtype=tf.float32))
-nn.add(FullyConnected(256, 'hidden1', 'relu', weight_reg=l2(0.01)))
-nn.add(FullyConnected(128, 'hidden2', 'relu', weight_reg=l2(0.01)))
-nn.add(FullyConnected(64, 'hidden3', 'relu', weight_reg=l2(0.01)))
+nn.add(Input('input', 50))
+nn.add(FullyConnected('hidden1', 256, 'relu', weight_regularizer=l2(0.01)))
+nn.add(FullyConnected('hidden2', 128, 'relu', weight_regularizer=l2(0.01)))
+nn.add(FullyConnected('hidden3', 64, 'relu', weight_regularizer=l2(0.01)))
 nn.add(Output(loss_fn='sparse_softmax_cross_entropy', output_fn='softmax',
-              name='output', output_shape=5, target_shape=[1], 
-              dtype=tf.int64, weight_reg=l2(0.01)))
+              name='output', output_shape=5, target_shape=1, 
+              target_dtype=tf.int64, weight_regularizer=l2(0.01)))
 nn.build()
 
 

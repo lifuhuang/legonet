@@ -20,9 +20,9 @@ def get(name):
     return _initializers.get(name, None)
 
 
-_initializers = {'xavier': xavier,
-                 'constant': constant,
-                 'truncated_normal': truncated_normal,
-                 'random_normal': normal,
-                 'random_uniform': uniform,
-                 'uniform_unit_scaling': uniform_unit_scaling}
+_initializers = {'xavier': xavier(),
+                 'constant': constant(),
+                 'truncated_normal': truncated_normal(),
+                 'random_normal': normal(),
+                 'random_uniform': uniform(),
+                 'uniform_unit_scaling': uniform_unit_scaling()}
