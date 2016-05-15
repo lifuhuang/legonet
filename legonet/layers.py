@@ -97,7 +97,7 @@ class FullyConnected(Layer):
                         [self.n_output_units], 
                         initializer=self._bias_init, 
                         regularizer=self._bias_regularizer)
-                    self.output = tf.add(self.output, self.b)
+                    self.output = tf.nn.bias_add(self.output, self.b)
             
             with tf.variable_scope('activation_function'):
                 if self._activation_fn is not None:
@@ -117,7 +117,7 @@ class Convolution2D(Layer):
         """
         
         if weight_init is None:
-            weight_init = initializers.truncated_normal(1e-4)
+            weight_init = initializers.xavier_conv2d()
         if bias_init is None:
             bias_init = initializers.constant(0.1)
             
@@ -174,7 +174,7 @@ class Convolution2D(Layer):
                     self.n_output_channels, 
                     initializer=self._bias_init, 
                     regularizer=self._bias_regularizer)
-                self.output = tf.add(self.output, self.bias, name = 'bias')
+                self.output = tf.nn.bias_add(self.output, self.bias)
             
             if self._activation_fn is not None:
                 self.output = self._activation_fn(self.output)
@@ -184,14 +184,14 @@ class Pooling2D(Layer):
     """
     
     
-    def __init__(self, name, pool_size=(2, 2), strides=(2, 2), mode='max',
+    def __init__(self, name, pool_shape=(2, 2), strides=(2, 2), mode='max',
                  padding='VALID'):
         """Initializes a new Convolution2D instance.
         """
         
         super(Pooling2D, self).__init__(name)
         
-        self.pool_size = pool_size
+        self.pool_shape = pool_shape
         self.strides = strides
         self.padding = padding
         
@@ -209,7 +209,7 @@ class Pooling2D(Layer):
         with tf.variable_scope(self.name):
             self.output = self._pool_fn(
                 prev_layer.output, 
-                [1] + list(self.pool_size) + [1], 
+                [1] + list(self.pool_shape) + [1], 
                 [1] + list(self.strides) + [1], 
                 self.padding)
 

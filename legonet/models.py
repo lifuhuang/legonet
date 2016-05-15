@@ -159,7 +159,7 @@ class NeuralNetwork(object):
             # summaries
             for layer in self.layers:
                 tf.histogram_summary(
-                    '{0} activation'.format(layer.name), layer.output)
+                   '{0} activation'.format(layer.name), layer.output)
                 tf.scalar_summary(
                     '{0} sparsity'.format(layer.name), 
                     tf.nn.zero_fraction(layer.output))

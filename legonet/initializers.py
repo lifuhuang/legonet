@@ -7,6 +7,9 @@ Created on Sat Apr 23 16:10:50 2016
 
 
 from tensorflow.contrib.layers import xavier_initializer as xavier
+from tensorflow.contrib.layers import \
+    xavier_initializer_conv2d as xavier_conv2d
+    
 from tensorflow import truncated_normal_initializer as truncated_normal
 from tensorflow import constant_initializer as constant
 from tensorflow import random_normal_initializer as normal
@@ -23,6 +26,7 @@ def get(name):
 
 
 _initializers = {'xavier': xavier(),
+                 'xavier_conv2d': xavier_conv2d(),
                  'constant': constant(),
                  'truncated_normal': truncated_normal(),
                  'random_normal': normal(),
