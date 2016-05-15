@@ -16,6 +16,7 @@ class Layer(object):
     """Base class for all kinds of layers.
     """
     
+    # TODO: add operators: +, &
     
     def __init__(self, name):
         """Initialize a new Layer instance.
@@ -25,10 +26,17 @@ class Layer(object):
         """
         
         self.name = name
+        self.input = None
         self.output = None
+        self.upstream = None
     
-            
-    def build(self, prev_layer):
+    def connect_to(self, upstream):
+        """Connect this layer to another layer.
+        """
+        
+        self.upstream = upstream
+    
+    def build(self):
         """Construct the layer in tensorflow graph.
         """
         
@@ -54,6 +62,7 @@ class FullyConnected(Layer):
             
         super(FullyConnected, self).__init__(name)
         
+        self.prev_layer = None
         self.n_output_units = n_output_units
         self.has_bias = has_bias
         self.W = None
@@ -76,19 +85,20 @@ class FullyConnected(Layer):
             
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
-        
-    def build(self, prev_layer):
+            
+    def build(self):
         """Construct the layer in tensorflow graph.
         """
         
+        self.input = self.upstream.output
         with tf.variable_scope(self.name):
             with tf.variable_scope('affine_transformation'):
-                prev_size = prev_layer.output.get_shape()[1:].num_elements()
+                prev_size = self.input.get_shape()[1:].num_elements()
                 self.W = tf.get_variable(
                     'W', [prev_size, self.n_output_units], 
                     initializer=self._weight_init,
                     regularizer=self._weight_regularizer)
-                flat_input = tf.reshape(prev_layer.output, (-1, prev_size))
+                flat_input = tf.reshape(self.input, (-1, prev_size))
                 self.output = tf.matmul(flat_input, self.W)
                     
                 if self.has_bias:
@@ -99,9 +109,13 @@ class FullyConnected(Layer):
                         regularizer=self._bias_regularizer)
                     self.output = tf.nn.bias_add(self.output, self.b)
             
-            with tf.variable_scope('activation_function'):
-                if self._activation_fn is not None:
+            if self._activation_fn is not None:
+                with tf.variable_scope('activation_fn'):
                     self.output = self._activation_fn(self.output)
+                    
+            tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
+            tf.add_to_collection(tf.GraphKeys.BIASES, self.b)
+            tf.add_to_collection(tf.GraphKeys.WEIGHTS, self.W)
                     
 class Convolution2D(Layer):
     """2D Convolution layer.
@@ -152,20 +166,21 @@ class Convolution2D(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
         
-    def build(self, prev_layer):
+    def build(self):
         """Construct the layer in tensorflow graph.
         """
         
+        self.input = self.upstream.output
         with tf.variable_scope(self.name):
             filter_shape = [self.filter_height,
                             self.filter_width,
-                            prev_layer.output.get_shape()[-1].value,
+                            self.input.get_shape()[-1].value,
                             self.n_output_channels]
             self.filter = tf.get_variable(
                 'filter', filter_shape, initializer=self._weight_init,
                 regularizer=self._weight_regularizer)
             self.output = tf.nn.conv2d(
-                prev_layer.output, self.filter, [1] + list(self.strides) + [1],
+                self.input, self.filter, [1] + list(self.strides) + [1],
                 self.padding, self.use_cudnn_on_gpu)
                 
             if self.has_bias:
@@ -179,6 +194,10 @@ class Convolution2D(Layer):
             if self._activation_fn is not None:
                 self.output = self._activation_fn(self.output)
 
+            tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
+            tf.add_to_collection(tf.GraphKeys.BIASES, self.bias)
+            tf.add_to_collection(tf.GraphKeys.WEIGHTS, self.filter)
+            
 class Pooling2D(Layer):
     """Pooling layer for 2D arrays.
     """
@@ -202,68 +221,20 @@ class Pooling2D(Layer):
         else:
             raise ValueError('Unrecognized pooling mode {1}'.format(mode))
         
-    def build(self, prev_layer):
+    def build(self):
         """Construct the layer in tensorflow graph.
         """
         
+        self.input = self.upstream.output
         with tf.variable_scope(self.name):
             self.output = self._pool_fn(
-                prev_layer.output, 
+                self.input, 
                 [1] + list(self.pool_shape) + [1], 
                 [1] + list(self.strides) + [1], 
                 self.padding)
-
-class Output(Layer):
-    """Output layer that wraps around another layer.
-    """
-    
-    
-    def __init__(self, name, output_shape, output_fn=None, loss_fn=None,
-                 target_dtype=tf.float32, target_shape=None, 
-                 inner_layer=None, **kwargs):
-        """Initializes a new Output instance.
-        """
         
-        super(Output, self).__init__(name)
-        
-        self.output_shape = tf.TensorShape(output_shape)
-        if output_fn is None:
-            output_fn = 'softmax'
+        tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
             
-        if loss_fn is None:        
-            loss_fn = 'sparse_softmax_cross_entropy'
-        
-        if inner_layer is None:
-            self.inner_layer = FullyConnected(
-                'inner_layer', self.output_shape.num_elements(), **kwargs)
-        else:
-            self.inner_layer = inner_layer
-        
-        self.name = name
-        self.target_dtype = target_dtype
-        self.target_shape = tf.TensorShape(target_shape) or self.output_shape
-        self._output_fn = activations.get(output_fn) or output_fn
-        self._loss_fn = objectives.get(loss_fn) or loss_fn
-        
-        self.loss = None
-        self.targets = None
-        
-    def build(self, prev_layer):
-        """Construct the layer in tensorflow graph.
-        """
-        
-        with tf.variable_scope(self.name):
-            self.inner_layer.build(prev_layer)            
-            with tf.variable_scope('output'):
-                self.output = self._output_fn(self.inner_layer.output)
-            with tf.variable_scope('loss'):      
-                self.targets = tf.placeholder(
-                    self.target_dtype, 
-                    [None] + self.target_shape.as_list(), 
-                    'targets')
-                self.loss = self._loss_fn(
-                    self.inner_layer.output, self.targets)
-
 class Input(Layer):
     """Input layer.
     """
@@ -277,12 +248,46 @@ class Input(Layer):
         
         self.input_shape = tf.TensorShape(input_shape)
         self.input_dtype=input_dtype
+    
+    def connect_to(self, upstream):
+        """Warning: Should never call this method.
+        """
         
-    def build(self, prev_layer=None):
+        raise NotImplementedError()
+        
+    def build(self):
         """Construct the layer in tensorflow graph.
         """
         
         with tf.variable_scope(self.name):
-            self.output = tf.placeholder(
+            self.input = tf.placeholder(
                 self.input_dtype, [None] + self.input_shape.as_list(), 'input')
-                                     
+            self.output = self.input
+        
+        tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
+        
+class Embedding(Layer):
+    """Embedding layer.
+    """
+    
+        
+    def __init__(self, name,  params):
+        """Initializes a new Input instance.
+        """
+        
+        super(Input, self).__init__(name)
+        
+        self.params = params
+        self.init_table = None
+        self.table = None
+        
+    def build(self):
+        """Construct the layer in tensorflow graph.
+        """
+        
+        with tf.variable_scope(self.name):            
+            self.output = tf.placeholder(tf.int64, name='input')
+            self.init_table = tf.convert_to_tensor(self.params)
+            self.table = tf.get_variable('table', self.init_table)
+
+        tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)

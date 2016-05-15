@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 from legonet.models import NeuralNetwork
-from legonet.layers import Input, Output, Convolution2D, Pooling2D, FullyConnected
+from legonet.layers import Input, Convolution2D, Pooling2D, FullyConnected
 from legonet.optimizers import Adam
 from legonet.initializers import *
 
@@ -42,22 +42,18 @@ print 'Data loaded!'
 
 nn = NeuralNetwork(optimizer=Adam(0.01), log_dir='logs')
 nn.add(Input('input', [32, 32, 3], ))
-nn.add(Convolution2D(name='conv1', filter_height=3, filter_width=3, 
+nn.add(Convolution2D(name='conv1', filter_height=5, filter_width=5, 
                      n_output_channels=256, activation_fn='relu'))
 nn.add(Pooling2D('pooling1', mode='max', pool_shape=(2, 2)))
-nn.add(Convolution2D(name='conv2', filter_height=3, filter_width=3, 
+nn.add(Convolution2D(name='conv2', filter_height=5, filter_width=5, 
                      n_output_channels=256, activation_fn='relu'))
 nn.add(Pooling2D('pooling2', mode='max', pool_shape=(2, 2)))
-nn.add(Convolution2D(name='conv3', filter_height=3, filter_width=3, 
-                     n_output_channels=256, activation_fn='relu'))
-nn.add(Pooling2D('pooling3', mode='max', pool_shape=(2, 2)))
 nn.add(FullyConnected('fc1', 384, activation_fn='relu',
                       weight_init=truncated_normal(), bias_init=constant(0.1)))
 nn.add(FullyConnected('fc2', 192, activation_fn='relu', 
                       weight_init=truncated_normal(), bias_init=constant(0.1)))
-nn.add(Output(loss_fn='sparse_softmax_cross_entropy', output_fn='softmax',
-              name='output', target_shape=[], target_dtype=tf.int64, 
-              output_shape=10))
+nn.add(FullyConnected('output', 10, weight_init=truncated_normal(), 
+                      bias_init=constant(0.1)))
 nn.build()
 
 

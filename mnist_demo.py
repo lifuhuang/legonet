@@ -14,7 +14,7 @@ Created on Mon May  9 14:35:12 2016
 
 import numpy as np
 from legonet.models import NeuralNetwork
-from legonet.layers import Input, Output, Convolution2D, Pooling2D
+from legonet.layers import Input, FullyConnected, Convolution2D, Pooling2D
 from legonet.optimizers import Adam
 
 from tensorflow.examples.tutorials.mnist import input_data
@@ -26,15 +26,15 @@ mode = 'train'
 
 mnist = input_data.read_data_sets('MNIST_data', one_hot=True)
 
-nn = NeuralNetwork(optimizer=Adam(), log_dir='logs')
+nn = NeuralNetwork(optimizer=Adam(), log_dir='logs',
+                   loss_fn='softmax_cross_entropy', target_dtype=tf.float32)
 nn.add(Input('input', [28, 28, 1], ))
 nn.add(Convolution2D(name='conv1', filter_height=3, filter_width=3, 
                      n_output_channels=512, activation_fn='relu'))
-nn.add(Pooling2D('pooling1', mode='max'))
+nn.add(Pooling2D('pooling1'))
 nn.add(Convolution2D(name='conv3', filter_height=3, filter_width=3, 
                      n_output_channels=256, activation_fn='relu'))
-nn.add(Output(loss_fn='softmax_cross_entropy', output_fn='softmax',
-              name='output', output_shape=10))
+nn.add(FullyConnected('output', 10))
 nn.build()
 
 
@@ -50,7 +50,7 @@ except Exception as e:
     
 if mode == 'train':
     nn.fit(X_train, Y_train, n_epochs=10, batch_size=64,
-           freq_checkpoint=100 , freq_compute_loss=10, 
+           freq_checkpoint=100 , freq_log=10, 
            checkpoint_dir='./checkpoints/', loss_decay=0.9)
 elif mode == 'test':
     Y_pred = nn.predict(X_test)

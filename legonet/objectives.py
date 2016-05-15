@@ -20,14 +20,14 @@ def sparse_softmax_cross_entropy(logits, labels):
     """
     
     return tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-        logits, tf.squeeze(labels)))
+        logits, labels))
 
 def sigmoid_cross_entropy(logits, targets):
     """Cross-entropy error for sigmoid output layer.
     """
     
     return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
-        tf.squeeze(logits), tf.squeeze(targets)))
+        logits, targets))
 
 def mean_square(output, labels):
     """Mean square error.

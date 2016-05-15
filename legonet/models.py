@@ -3,27 +3,87 @@ import os.path
 import numpy as np
 import tensorflow as tf
 
+from . layers import Layer
+from . import activations
+from . import objectives
 
-class NeuralNetwork(object):
+class Sequential(Layer):
+    """# TODO: docstring
+    """
+    
+    
+    def __init__(self, name):
+        """Initialize a new instance of Sequential.
+        """        
+        
+        super(Sequential, self).__init__(name)
+        
+        self.layers = []
+    
+    def build(self):
+        """Construct the Sequential and its layers.
+        """
+        
+        # build graph at layer level
+        with tf.variable_scope(self.name):
+            for i, layer in enumerate(self.layers): 
+                if i > 0:
+                    layer.connect_to(self.layers[i-1])
+                layer.build()
+            
+        # keep record of input/ouput of model
+        self.input = self.layers[0].input
+        self.output = self.layers[-1].output  
+
+    def add(self, layer):
+        """Add a layer to this network.
+        """
+        
+        self.layers.append(layer)
+
+class NeuralNetwork(Sequential):
     """Base classes of all neural networks.
     """
     
     
-    def __init__(self, optimizer, log_dir=None, graph=None, session=None):
+    def __init__(self, optimizer, log_dir=None,  name='neural_network',
+                 output_fn=None, loss_fn=None, target_dtype=tf.int64,
+                 graph=None, session=None):
         """Initialize a new instance of NeuralNetwork.
         """        
         
-        self.layers = []
+        if output_fn is None:
+            output_fn = 'softmax'            
+        if loss_fn is None:        
+            loss_fn = 'sparse_softmax_cross_entropy'
+            
+        super(NeuralNetwork, self).__init__(name)
+        
         self.optimizer = optimizer
         self.log_dir = log_dir
         
+        self.target_dtype = target_dtype
+        
+        # functions
+        if isinstance(output_fn, str):
+            self._output_fn = activations.get(output_fn)
+        else:
+            self._output_fn = output_fn
+            
+        if isinstance(loss_fn, str):
+            self._loss_fn = objectives.get(loss_fn) 
+        else:
+            self._loss_fn = loss_fn
+                
         # placeholders
         self.input = None
+        self.targets = None
+
+        # tensors        
         self.output = None
         self.unregularized_loss = None        
-        
-        self.global_step = None
         self.loss = None
+        self.global_step = None
         self.update_op = None
         self.merged_summaries = None
         self.saver = None
@@ -86,7 +146,6 @@ class NeuralNetwork(object):
                              self.targets: y_batch}
                              
                 _, step = self.session.run(fetches, feed_dict=feed_dict)
-                
                 if step % freq_log == 0:
                     fetches = [self.merged_summaries, self.loss]
                     summary, batch_loss = self.session.run(fetches, feed_dict)
@@ -132,16 +191,14 @@ class NeuralNetwork(object):
         """
         
         with self.graph.as_default():
-            # build graph at layer level
-            with tf.variable_scope('core'):
-                for i, layer in enumerate(self.layers): 
-                    layer.build(self.layers[i-1] if i > 0 else None)
+            super(NeuralNetwork, self).build()
                 
             # keep record of input/ouput of model
-            self.input = self.layers[0].output
-            self.output = self.layers[-1].output        
-            self.targets = self.layers[-1].targets
-            self.unregularized_loss = self.layers[-1].loss
+            self.input = self.layers[0].input
+            self.output = self._output_fn(self.layers[-1].output)
+            self.targets = tf.placeholder(self.target_dtype, name='target')
+            self.unregularized_loss = self._loss_fn(
+                self.layers[-1].output, self.targets)
             
             # build graph at network level
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -157,12 +214,11 @@ class NeuralNetwork(object):
                 self.loss, global_step=self.global_step)
             
             # summaries
-            for layer in self.layers:
-                tf.histogram_summary(
-                   '{0} activation'.format(layer.name), layer.output)
+            for activation in tf.get_collection(tf.GraphKeys.ACTIVATIONS):
+                tf.histogram_summary(activation.name, activation)
                 tf.scalar_summary(
-                    '{0} sparsity'.format(layer.name), 
-                    tf.nn.zero_fraction(layer.output))
+                    '{0} sparsity'.format(activation.name), 
+                    tf.nn.zero_fraction(activation))
             tf.scalar_summary("Loss", self.loss)
             self.merged_summaries = tf.merge_all_summaries()
             
@@ -177,11 +233,4 @@ class NeuralNetwork(object):
             sw.close()
                 
         self.built = True
-    
-    def add(self, layer):
-        """Add a layer to this network.
-        """
         
-        self.layers.append(layer)
-
-   
