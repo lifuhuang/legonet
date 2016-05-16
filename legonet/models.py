@@ -3,52 +3,18 @@ import os.path
 import numpy as np
 import tensorflow as tf
 
-from . layers import Layer
 from . import activations
 from . import objectives
+from .layers import Sequential
 
-class Sequential(Layer):
-    """# TODO: docstring
-    """
-    
-    
-    def __init__(self, name):
-        """Initialize a new instance of Sequential.
-        """        
-        
-        super(Sequential, self).__init__(name)
-        
-        self.layers = []
-    
-    def build(self):
-        """Construct the Sequential and its layers.
-        """
-        
-        # build graph at layer level
-        with tf.variable_scope(self.name):
-            for i, layer in enumerate(self.layers): 
-                if i > 0:
-                    layer.connect_to(self.layers[i-1])
-                layer.build()
-            
-        # keep record of input/ouput of model
-        self.input = self.layers[0].input
-        self.output = self.layers[-1].output  
-
-    def add(self, layer):
-        """Add a layer to this network.
-        """
-        
-        self.layers.append(layer)
-
-class NeuralNetwork(Sequential):
+class NeuralNetwork(object):
     """Base classes of all neural networks.
     """
     
     
-    def __init__(self, optimizer, log_dir=None,  name='neural_network',
+    def __init__(self, optimizer, log_dir=None,
                  output_fn=None, loss_fn=None, target_dtype=tf.int64,
-                 graph=None, session=None):
+                 model=None, graph=None, session=None):
         """Initialize a new instance of NeuralNetwork.
         """        
         
@@ -56,9 +22,10 @@ class NeuralNetwork(Sequential):
             output_fn = 'softmax'            
         if loss_fn is None:        
             loss_fn = 'sparse_softmax_cross_entropy'
-            
-        super(NeuralNetwork, self).__init__(name)
+        if model is None:
+            model = Sequential('core')
         
+        self.model = model        
         self.optimizer = optimizer
         self.log_dir = log_dir
         
@@ -150,7 +117,6 @@ class NeuralNetwork(Sequential):
                     fetches = [self.merged_summaries, self.loss]
                     summary, batch_loss = self.session.run(fetches, feed_dict)
 
-                    
                     msg = 'Step: {0}, training loss: {1}'.format(step, 
                         batch_loss)
                     if loss_decay == 0:
@@ -191,14 +157,13 @@ class NeuralNetwork(Sequential):
         """
         
         with self.graph.as_default():
-            super(NeuralNetwork, self).build()
-                
+            self.model.build()
+            
             # keep record of input/ouput of model
-            self.input = self.layers[0].input
-            self.output = self._output_fn(self.layers[-1].output)
+            self.input = self.model.input
+            self.output = self._output_fn(self.model.output)
             self.targets = tf.placeholder(self.target_dtype, name='target')
-            self.unregularized_loss = self._loss_fn(
-                self.layers[-1].output, self.targets)
+            self.unregularized_loss = self._loss_fn(self.output, self.targets)
             
             # build graph at network level
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -233,4 +198,9 @@ class NeuralNetwork(Sequential):
             sw.close()
                 
         self.built = True
+    
+    def add(self, layer):
+        """Add a layer to the model inside this NeuralNetwork.
+        """
         
+        self.model.add(layer)

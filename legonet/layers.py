@@ -10,7 +10,6 @@ import tensorflow as tf
 
 from . import initializers
 from . import activations
-from . import objectives
 
 class Layer(object):
     """Base class for all kinds of layers.
@@ -41,8 +40,84 @@ class Layer(object):
         """
         
         raise NotImplementedError
+        
+class Sequential(Layer):
+    """# TODO: docstring
+    """
+    
+    
+    def __init__(self, name):
+        """Initialize a new instance of Sequential.
+        """        
+        
+        super(Sequential, self).__init__(name)
+        
+        self.layers = []
+    
+    def build(self):
+        """Construct the Sequential and its layers.
+        """
+        
+        # build graph at layer level
+        with tf.variable_scope(self.name):
+            for i, layer in enumerate(self.layers): 
+                if i > 0:
+                    layer.connect_to(self.layers[i-1])
+                layer.build()
+            
+        # keep record of input/ouput of model
+        self.input = self.layers[0].input
+        self.output = self.layers[-1].output  
 
+    def add(self, layer):
+        """Add a layer to this network.
+        """
+        
+        self.layers.append(layer)
 
+class Parallel(Layer):
+    """# TODO: docstring
+    """
+    
+    
+    def __init__(self, name, mode='concat', along_dim=0):
+        """Initialize a new instance of Parallel.
+        """        
+        
+        super(Sequential, self).__init__(name)
+        
+        self.layers = []
+        if mode in ['concat', 'sum', 'mean']:
+            raise ValueError('Unknown mode: {0}'.format(mode))            
+        self.mode = mode
+        self.along_dim = along_dim
+    
+    def build(self):
+        """Construct the Sequential and its layers.
+        """
+        
+        # build graph at layer level
+        with tf.variable_scope(self.name):
+            for i, layer in enumerate(self.layers): 
+                layer.connect_to(self.upstream)
+                layer.build()
+                
+            # keep record of input/ouput of model
+            self.input = self.upstream.output
+            outputs = list(l.output for l in self.layers)
+            if self.mode == 'concat':
+                self.output = tf.concat(outputs, self.along_dim, outputs)
+            elif self.mode == 'mean':
+                self.output = tf.add_n(outputs) / len(self.layers)
+            elif self.mode == 'sum':
+                self.output = tf.add_n(outputs)
+
+    def add(self, layer):
+        """Add a layer to this network.
+        """
+        
+        self.layers.append(layer)
+        
 class FullyConnected(Layer):
     """A simple fully connected feedforward layer.
     """
@@ -271,7 +346,7 @@ class Embedding(Layer):
     """
     
         
-    def __init__(self, name,  params):
+    def __init__(self, name, params):
         """Initializes a new Input instance.
         """
         
@@ -279,15 +354,16 @@ class Embedding(Layer):
         
         self.params = params
         self.init_table = None
-        self.table = None
+        self.lookup_table = None
         
     def build(self):
         """Construct the layer in tensorflow graph.
         """
         
         with tf.variable_scope(self.name):            
-            self.output = tf.placeholder(tf.int64, name='input')
-            self.init_table = tf.convert_to_tensor(self.params)
-            self.table = tf.get_variable('table', self.init_table)
+            self.input = tf.placeholder(tf.int64, name='input')
+            self.init_table = tf.convert_to_tensor(self.params, 'init_table')
+            self.lookup_table = tf.get_variable(
+                'lookup_table', self.init_table)
 
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
