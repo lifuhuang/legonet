@@ -10,114 +10,16 @@ import tensorflow as tf
 
 from . import initializers
 from . import activations
+from . topology import Node
 
-class Layer(object):
+class Layer(Node):
     """Base class for all kinds of layers.
     """
     
     # TODO: add operators: +, &
     
-    def __init__(self, name):
-        """Initialize a new Layer instance.
-        
-        Since Layer is a abstract class, this method should only be called by
-        its derived classes.
-        """
-        
-        self.name = name
-        self.input = None
-        self.output = None
-        self.upstream = None
-    
-    def connect_to(self, upstream):
-        """Connect this layer to another layer.
-        """
-        
-        self.upstream = upstream
-    
-    def build(self):
-        """Construct the layer in tensorflow graph.
-        """
-        
-        raise NotImplementedError
-        
-class Sequential(Layer):
-    """# TODO: docstring
-    """
-    
-    
-    def __init__(self, name):
-        """Initialize a new instance of Sequential.
-        """        
-        
-        super(Sequential, self).__init__(name)
-        
-        self.layers = []
-    
-    def build(self):
-        """Construct the Sequential and its layers.
-        """
-        
-        # build graph at layer level
-        with tf.variable_scope(self.name):
-            for i, layer in enumerate(self.layers): 
-                if i > 0:
-                    layer.connect_to(self.layers[i-1])
-                layer.build()
-            
-        # keep record of input/ouput of model
-        self.input = self.layers[0].input
-        self.output = self.layers[-1].output  
+    pass
 
-    def add(self, layer):
-        """Add a layer to this network.
-        """
-        
-        self.layers.append(layer)
-
-class Parallel(Layer):
-    """# TODO: docstring
-    """
-    
-    
-    def __init__(self, name, mode='concat', along_dim=0):
-        """Initialize a new instance of Parallel.
-        """        
-        
-        super(Sequential, self).__init__(name)
-        
-        self.layers = []
-        if mode in ['concat', 'sum', 'mean']:
-            raise ValueError('Unknown mode: {0}'.format(mode))            
-        self.mode = mode
-        self.along_dim = along_dim
-    
-    def build(self):
-        """Construct the Sequential and its layers.
-        """
-        
-        # build graph at layer level
-        with tf.variable_scope(self.name):
-            for i, layer in enumerate(self.layers): 
-                layer.connect_to(self.upstream)
-                layer.build()
-                
-            # keep record of input/ouput of model
-            self.input = self.upstream.output
-            outputs = list(l.output for l in self.layers)
-            if self.mode == 'concat':
-                self.output = tf.concat(outputs, self.along_dim, outputs)
-            elif self.mode == 'mean':
-                self.output = tf.add_n(outputs) / len(self.layers)
-            elif self.mode == 'sum':
-                self.output = tf.add_n(outputs)
-
-    def add(self, layer):
-        """Add a layer to this network.
-        """
-        
-        self.layers.append(layer)
-        
 class FullyConnected(Layer):
     """A simple fully connected feedforward layer.
     """
@@ -165,7 +67,8 @@ class FullyConnected(Layer):
         """Construct the layer in tensorflow graph.
         """
         
-        self.input = self.upstream.output
+        self.input = self.pred.output
+        print self.input.get_shape()
         with tf.variable_scope(self.name):
             with tf.variable_scope('affine_transformation'):
                 prev_size = self.input.get_shape()[1:].num_elements()
@@ -197,8 +100,8 @@ class Convolution2D(Layer):
     """
     
     
-    def __init__(self, name, filter_height, filter_width, n_output_channels, 
-                 activation_fn='relu', strides=(1, 1), padding='SAME', 
+    def __init__(self, name, filter_shape, n_output_channels, 
+                 activation_fn='relu', strides=[1, 1], padding='SAME', 
                  weight_init=None, bias_init=None, 
                  weight_regularizer=None, bias_regularizer=None, 
                  use_cudnn_on_gpu=True, has_bias=True):
@@ -212,10 +115,9 @@ class Convolution2D(Layer):
             
         super(Convolution2D, self).__init__(name)
         
-        self.filter_height = filter_height
-        self.filter_width = filter_width
+        self.filter_shape = list(filter_shape)
         self.n_output_channels = n_output_channels
-        self.strides = strides
+        self.strides = list(strides)
         self.padding = padding
         self.use_cudnn_on_gpu = use_cudnn_on_gpu
         self.has_bias = has_bias
@@ -245,17 +147,15 @@ class Convolution2D(Layer):
         """Construct the layer in tensorflow graph.
         """
         
-        self.input = self.upstream.output
+        self.input = self.pred.output
         with tf.variable_scope(self.name):
-            filter_shape = [self.filter_height,
-                            self.filter_width,
-                            self.input.get_shape()[-1].value,
-                            self.n_output_channels]
+            full_shape = (self.filter_shape + 
+                [self.input.get_shape()[-1].value, self.n_output_channels])
             self.filter = tf.get_variable(
-                'filter', filter_shape, initializer=self._weight_init,
+                'filter', full_shape, initializer=self._weight_init,
                 regularizer=self._weight_regularizer)
             self.output = tf.nn.conv2d(
-                self.input, self.filter, [1] + list(self.strides) + [1],
+                self.input, self.filter, [1] + self.strides + [1],
                 self.padding, self.use_cudnn_on_gpu)
                 
             if self.has_bias:
@@ -278,15 +178,15 @@ class Pooling2D(Layer):
     """
     
     
-    def __init__(self, name, pool_shape=(2, 2), strides=(2, 2), mode='max',
+    def __init__(self, name, pool_shape=[2, 2], strides=[2, 2], mode='max',
                  padding='VALID'):
         """Initializes a new Convolution2D instance.
         """
         
         super(Pooling2D, self).__init__(name)
         
-        self.pool_shape = pool_shape
-        self.strides = strides
+        self.pool_shape = list(pool_shape)
+        self.strides = list(strides)
         self.padding = padding
         
         if mode == 'max':
@@ -300,12 +200,12 @@ class Pooling2D(Layer):
         """Construct the layer in tensorflow graph.
         """
         
-        self.input = self.upstream.output
+        self.input = self.pred.output
         with tf.variable_scope(self.name):
             self.output = self._pool_fn(
                 self.input, 
-                [1] + list(self.pool_shape) + [1], 
-                [1] + list(self.strides) + [1], 
+                [1] + self.pool_shape + [1], 
+                [1] + self.strides + [1], 
                 self.padding)
         
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
@@ -346,24 +246,29 @@ class Embedding(Layer):
     """
     
         
-    def __init__(self, name, params):
+    def __init__(self, name, input_shape, params):
         """Initializes a new Input instance.
         """
-        
-        super(Input, self).__init__(name)
+            
+        super(Embedding, self).__init__(name)
         
         self.params = params
         self.init_table = None
         self.lookup_table = None
+        self.input_shape = list(input_shape)
+        # TODO: add trainable attribute
         
     def build(self):
         """Construct the layer in tensorflow graph.
         """
         
         with tf.variable_scope(self.name):            
-            self.input = tf.placeholder(tf.int64, name='input')
-            self.init_table = tf.convert_to_tensor(self.params, 'init_table')
+            self.input = tf.placeholder(
+                tf.int64, name='input', shape=[None] + self.input_shape)
+            self.init_table = tf.convert_to_tensor(
+                self.params, tf.float32, 'init_table')
             self.lookup_table = tf.get_variable(
-                'lookup_table', self.init_table)
+                'lookup_table', initializer=self.init_table)
+            self.output = tf.nn.embedding_lookup(self.lookup_table, self.input)
 
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)

@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from . import activations
 from . import objectives
-from .layers import Sequential
+from .topology import Sequential
 
 class NeuralNetwork(object):
     """Base classes of all neural networks.
