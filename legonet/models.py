@@ -5,6 +5,7 @@ import tensorflow as tf
 
 from . import activations
 from . import objectives
+from . import GraphKeys
 from .topology import Sequential
 
 class NeuralNetwork(object):
@@ -157,40 +158,44 @@ class NeuralNetwork(object):
         """
         
         with self.graph.as_default():
-            self.model.build()
-            
-            # keep record of input/ouput of model
-            self.input = self.model.input
-            self.output = self._output_fn(self.model.output)
-            self.targets = tf.placeholder(self.target_dtype, name='target')
-            self.unregularized_loss = self._loss_fn(
-                self.model.output, self.targets)
-            
-            # build graph at network level
-            reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-            self.loss = tf.add_n(
-                [self.unregularized_loss] + reg_losses, name='loss')
-            
-            self.global_step = tf.get_variable(
-                'global_step', [], tf.int64, 
-                initializer=tf.zeros_initializer,
-                trainable=False)
+            with self.session.as_default():
+                # TODO: create collection of outputs
+                raw_output = self.model.call()
                 
-            self.update_op = self.optimizer.minimize(
-                self.loss, global_step=self.global_step)
-            
-            # summaries
-            for activation in tf.get_collection(tf.GraphKeys.ACTIVATIONS):
-                tf.histogram_summary(activation.name, activation)
-                tf.scalar_summary(
-                    '{0} sparsity'.format(activation.name), 
-                    tf.nn.zero_fraction(activation))
-            tf.scalar_summary("Loss", self.loss)
-            self.merged_summaries = tf.merge_all_summaries()
-            
-            self.session.run(tf.initialize_all_variables())
-            self.saver = tf.train.Saver()
-            self.graph.finalize()
+                all_vars_before = set(tf.all_variables())
+                # keep record of input/ouput of model
+                self.input = tf.get_collection(GraphKeys.MODEL_INPUTS)[0]
+                self.output = self._output_fn(raw_output)
+                self.targets = tf.placeholder(self.target_dtype, name='target')
+                self.unregularized_loss = self._loss_fn(
+                    raw_output, self.targets)
+                
+                # build graph at network level
+                reg_losses = tf.get_collection(
+                    tf.GraphKeys.REGULARIZATION_LOSSES)
+                self.loss = tf.add_n(
+                    [self.unregularized_loss] + reg_losses, name='loss')
+                
+                self.global_step = tf.get_variable(
+                    'global_step', [], tf.int64, 
+                    initializer=tf.zeros_initializer,
+                    trainable=False)
+                    
+                self.update_op = self.optimizer.minimize(
+                    self.loss, global_step=self.global_step)
+                
+                # summaries
+                for activation in tf.get_collection(tf.GraphKeys.ACTIVATIONS):
+                    tf.histogram_summary(activation.name, activation)
+                    tf.scalar_summary(
+                        '{0} sparsity'.format(activation.name), 
+                        tf.nn.zero_fraction(activation))
+                tf.scalar_summary("Loss", self.loss)
+                self.merged_summaries = tf.merge_all_summaries()
+                all_vars_after = set(tf.all_variables())
+                tf.initialize_variables(all_vars_after - all_vars_before).run()
+                self.saver = tf.train.Saver()
+                self.graph.finalize()
         
         if self.log_dir is not None:
             sw = tf.train.SummaryWriter(self.log_dir, graph=self.graph)

@@ -21,17 +21,6 @@ class Node(object):
         """
         
         self.name = name
-        
-        self.pred = None
-        self.succ = None
-
-    def connect_to(self, predecessor):
-        """Connect this Node to another layer.
-        """
-        
-        self.pred = predecessor
-        if predecessor is not None:
-            self.pred.succ = self
     
     def call(self, flow, reuse=False):
         """Construct the Node in tensorflow graph.
@@ -52,24 +41,21 @@ class Sequential(Node):
         
         self.layers = []
     
-    def call(self, flow, reuse=False):
+    def call(self, flow=None, reuse=False):
         """Construct the Sequential and its layers.
         """
             
         # build graph at layer level
         with tf.variable_scope(self.name, reuse=reuse):
             for layer in self.layers: 
-                flow = layer.call(inflow, reuse)
-            
+                flow = layer.call(flow, reuse)
+                
+        return flow
 
     def add(self, layer):
         """Add a layer to this network.
         """
         
-        if not self.layers:
-            layer.connect_to(self.pred)
-        else:
-            layer.connect_to(self.layers[i-1])
         self.layers.append(layer)
 
 class Parallel(Node):
@@ -91,25 +77,22 @@ class Parallel(Node):
         self.mode = mode
         self.along_dim = along_dim
         
-    def build(self, graph=None, session=None, reuse=False):
+    def call(self, flow=None, reuse=False):
         """Construct the Sequential and its layers.
         """
         
         # build graph at layer level
         with tf.variable_scope(self.name, reuse=reuse):
-            for i, layer in enumerate(self.layers): 
-                layer.connect_to(self.pred)                
-                layer.build(graph, session, reuse)
+            outputs = []
+            for i, layer in enumerate(self.layers):        
+                outputs.append(layer.call(flow, reuse))
                 
-            # keep record of input/ouput of model
-            self.input = self.pred.output
-            outputs = list(l.output for l in self.layers)
             if self.mode == 'concat':
-                self.output = tf.concat(self.along_dim, outputs)
+                return tf.concat(self.along_dim, outputs)
             elif self.mode == 'mean':
-                self.output = tf.add_n(outputs) / len(self.layers)
+                return tf.add_n(outputs) / len(self.layers)
             elif self.mode == 'sum':
-                self.output = tf.add_n(outputs)
+                return tf.add_n(outputs)
 
     def add(self, layer):
         """Add a layer to this network.
