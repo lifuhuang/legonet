@@ -18,7 +18,13 @@ class Layer(Node):
     
     # TODO: add operators: +, &
     
-    pass
+    def __init__(self, name, trainable=True):
+        """Initialize a new Layer instance.
+        """
+        
+        super(Layer, self).__init__(name)
+        self.trainable = trainable
+        self.params = []
 
 class FullyConnected(Layer):
     """A simple fully connected feedforward layer.
@@ -28,7 +34,7 @@ class FullyConnected(Layer):
     def __init__(self, name, n_output_units, activation_fn=None, 
                  weight_init=None, bias_init=None, 
                  weight_regularizer=None, bias_regularizer=None, 
-                 has_bias=True):
+                 has_bias=True, trainable=True):
         """Initializes a new FullyConnected instance.
         """
         
@@ -37,7 +43,7 @@ class FullyConnected(Layer):
         if bias_init is None:
             bias_init = initializers.constant()
             
-        super(FullyConnected, self).__init__(name)
+        super(FullyConnected, self).__init__(name, trainable)
         
         self.prev_layer = None
         self.n_output_units = n_output_units
@@ -63,19 +69,26 @@ class FullyConnected(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
             
-    def build(self):
+    def build(self, graph=None, session=None, reuse=False):
         """Construct the layer in tensorflow graph.
         """
         
+        if graph is None:
+            graph = tf.get_default_graph()
+        if session is None:
+            session = tf.get_default_session()
+            
         self.input = self.pred.output
-        print self.input.get_shape()
-        with tf.variable_scope(self.name):
+        with tf.variable_scope(self.name, reuse=reuse):
             with tf.variable_scope('affine_transformation'):
                 prev_size = self.input.get_shape()[1:].num_elements()
                 self.W = tf.get_variable(
                     'W', [prev_size, self.n_output_units], 
                     initializer=self._weight_init,
-                    regularizer=self._weight_regularizer)
+                    regularizer=self._weight_regularizer,
+                    trainable=self.trainable)
+                if not reuse:
+                    self.params.append(self.W)
                 flat_input = tf.reshape(self.input, (-1, prev_size))
                 self.output = tf.matmul(flat_input, self.W)
                     
@@ -84,16 +97,21 @@ class FullyConnected(Layer):
                         'b', 
                         [self.n_output_units], 
                         initializer=self._bias_init, 
-                        regularizer=self._bias_regularizer)
+                        regularizer=self._bias_regularizer,
+                        trainable=self.trainable)
+                    if not reuse:
+                        self.params.append(self.b)
                     self.output = tf.nn.bias_add(self.output, self.b)
             
             if self._activation_fn is not None:
                 with tf.variable_scope('activation_fn'):
                     self.output = self._activation_fn(self.output)
-                    
+            
             tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
             tf.add_to_collection(tf.GraphKeys.BIASES, self.b)
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, self.W)
+            
+            tf.initialize_variables(self.params)
                     
 class Convolution2D(Layer):
     """2D Convolution layer.
@@ -104,7 +122,7 @@ class Convolution2D(Layer):
                  activation_fn='relu', strides=[1, 1], padding='SAME', 
                  weight_init=None, bias_init=None, 
                  weight_regularizer=None, bias_regularizer=None, 
-                 use_cudnn_on_gpu=True, has_bias=True):
+                 use_cudnn_on_gpu=True, has_bias=True, trainable=True):
         """Initializes a new Convolution2D instance.
         """
         
@@ -113,7 +131,7 @@ class Convolution2D(Layer):
         if bias_init is None:
             bias_init = initializers.constant(0.1)
             
-        super(Convolution2D, self).__init__(name)
+        super(Convolution2D, self).__init__(name, trainable)
         
         self.filter_shape = list(filter_shape)
         self.n_output_channels = n_output_channels
@@ -143,17 +161,27 @@ class Convolution2D(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
         
-    def build(self):
+    def build(self, graph=None, session=None, reuse=False):
         """Construct the layer in tensorflow graph.
         """
         
+        if graph is None:
+            graph = tf.get_default_graph()
+        if session is None:
+            session = tf.get_default_session()
+            
         self.input = self.pred.output
-        with tf.variable_scope(self.name):
+        with tf.variable_scope(self.name, reuse=reuse):
             full_shape = (self.filter_shape + 
                 [self.input.get_shape()[-1].value, self.n_output_channels])
             self.filter = tf.get_variable(
-                'filter', full_shape, initializer=self._weight_init,
-                regularizer=self._weight_regularizer)
+                'filter', 
+                full_shape, 
+                initializer=self._weight_init,
+                regularizer=self._weight_regularizer,
+                trainable=self.trainable)
+            if not reuse:
+                self.params.append(self.filter)
             self.output = tf.nn.conv2d(
                 self.input, self.filter, [1] + self.strides + [1],
                 self.padding, self.use_cudnn_on_gpu)
@@ -163,15 +191,20 @@ class Convolution2D(Layer):
                     'bias', 
                     self.n_output_channels, 
                     initializer=self._bias_init, 
-                    regularizer=self._bias_regularizer)
+                    regularizer=self._bias_regularizer,
+                    trainable=self.trainable)
+                if not reuse:
+                    self.params.append(self.bias)
                 self.output = tf.nn.bias_add(self.output, self.bias)
-            
+                
             if self._activation_fn is not None:
                 self.output = self._activation_fn(self.output)
-
+            
             tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)
             tf.add_to_collection(tf.GraphKeys.BIASES, self.bias)
             tf.add_to_collection(tf.GraphKeys.WEIGHTS, self.filter)
+            
+            tf.initialize_variables(self.params)
             
 class Pooling2D(Layer):
     """Pooling layer for 2D arrays.
@@ -196,12 +229,17 @@ class Pooling2D(Layer):
         else:
             raise ValueError('Unrecognized pooling mode {1}'.format(mode))
         
-    def build(self):
+    def build(self, graph=None, session=None, reuse=False):
         """Construct the layer in tensorflow graph.
         """
         
+        if graph is None:
+            graph = tf.get_default_graph()
+        if session is None:
+            session = tf.get_default_session()
+            
         self.input = self.pred.output
-        with tf.variable_scope(self.name):
+        with tf.variable_scope(self.name, reuse=reuse):
             self.output = self._pool_fn(
                 self.input, 
                 [1] + self.pool_shape + [1], 
@@ -223,18 +261,17 @@ class Input(Layer):
         
         self.input_shape = tf.TensorShape(input_shape)
         self.input_dtype=input_dtype
-    
-    def connect_to(self, upstream):
-        """Warning: Should never call this method.
-        """
         
-        raise NotImplementedError()
-        
-    def build(self):
+    def build(self, graph=None, session=None, reuse=False):
         """Construct the layer in tensorflow graph.
         """
         
-        with tf.variable_scope(self.name):
+        if graph is None:
+            graph = tf.get_default_graph()
+        if session is None:
+            session = tf.get_default_session()
+            
+        with tf.variable_scope(self.name, reuse=reuse):
             self.input = tf.placeholder(
                 self.input_dtype, [None] + self.input_shape.as_list(), 'input')
             self.output = self.input
@@ -244,31 +281,41 @@ class Input(Layer):
 class Embedding(Layer):
     """Embedding layer.
     """
-    
+    # TODO: try assign and placeholder instead of tensor.
         
-    def __init__(self, name, input_shape, params):
+    def __init__(self, name, input_shape, init_values, trainable=True):
         """Initializes a new Input instance.
         """
             
-        super(Embedding, self).__init__(name)
+        super(Embedding, self).__init__(name, trainable)
         
-        self.params = params
-        self.init_table = None
-        self.lookup_table = None
+        self.init_values = init_values
         self.input_shape = list(input_shape)
-        # TODO: add trainable attribute
         
-    def build(self):
+        self.table_loader = None
+        self.lookup_table = None
+        
+    def build(self, graph=None, session=None, reuse=False):
         """Construct the layer in tensorflow graph.
         """
         
-        with tf.variable_scope(self.name):            
+        if graph is None:
+            graph = tf.get_default_graph()
+        if session is None:
+            session = tf.get_default_session()
+            
+        with tf.variable_scope(self.name, reuse=reuse):            
             self.input = tf.placeholder(
                 tf.int64, name='input', shape=[None] + self.input_shape)
-            self.init_table = tf.convert_to_tensor(
-                self.params, tf.float32, 'init_table')
+            self.table_loader = tf.placeholder(
+                tf.float32, shape=self.init_values.shape, 'loader')
             self.lookup_table = tf.get_variable(
-                'lookup_table', initializer=self.init_table)
+                'lookup_table', 
+                initializer=self.table_loader,
+                trainable=True)
+            if not reuse:
+                self.params.append(self.lookup_table)
+            tf.initialize_variables(self.params)
             self.output = tf.nn.embedding_lookup(self.lookup_table, self.input)
-
+            
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, self.output)

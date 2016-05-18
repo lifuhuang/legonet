@@ -163,7 +163,8 @@ class NeuralNetwork(object):
             self.input = self.model.input
             self.output = self._output_fn(self.model.output)
             self.targets = tf.placeholder(self.target_dtype, name='target')
-            self.unregularized_loss = self._loss_fn(self.output, self.targets)
+            self.unregularized_loss = self._loss_fn(
+                self.model.output, self.targets)
             
             # build graph at network level
             reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)

@@ -22,9 +22,6 @@ class Node(object):
         
         self.name = name
         
-        self.input = None
-        self.output = None
-        
         self.pred = None
         self.succ = None
 
@@ -36,7 +33,7 @@ class Node(object):
         if predecessor is not None:
             self.pred.succ = self
     
-    def build(self):
+    def call(self, flow, reuse=False):
         """Construct the Node in tensorflow graph.
         """
         
@@ -55,27 +52,24 @@ class Sequential(Node):
         
         self.layers = []
     
-    def build(self):
+    def call(self, flow, reuse=False):
         """Construct the Sequential and its layers.
         """
-        
-        # build graph at layer level
-        with tf.variable_scope(self.name):
-            for i, layer in enumerate(self.layers): 
-                if i == 0:
-                    layer.connect_to(self.pred)
-                else:
-                    layer.connect_to(self.layers[i-1])
-                layer.build()
             
-        # keep record of input/ouput of model
-        self.input = self.layers[0].input
-        self.output = self.layers[-1].output  
+        # build graph at layer level
+        with tf.variable_scope(self.name, reuse=reuse):
+            for layer in self.layers: 
+                flow = layer.call(inflow, reuse)
+            
 
     def add(self, layer):
         """Add a layer to this network.
         """
         
+        if not self.layers:
+            layer.connect_to(self.pred)
+        else:
+            layer.connect_to(self.layers[i-1])
         self.layers.append(layer)
 
 class Parallel(Node):
@@ -97,15 +91,15 @@ class Parallel(Node):
         self.mode = mode
         self.along_dim = along_dim
         
-    def build(self):
+    def build(self, graph=None, session=None, reuse=False):
         """Construct the Sequential and its layers.
         """
         
         # build graph at layer level
-        with tf.variable_scope(self.name):
+        with tf.variable_scope(self.name, reuse=reuse):
             for i, layer in enumerate(self.layers): 
-                layer.connect_to(self.pred)
-                layer.build()
+                layer.connect_to(self.pred)                
+                layer.build(graph, session, reuse)
                 
             # keep record of input/ouput of model
             self.input = self.pred.output
