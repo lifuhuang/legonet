@@ -14,28 +14,42 @@ from . topology import Node
 from . import GraphKeys
 
 class Layer(Node):
-    """Base class for all kinds of layers.
+    """Abstract base class for all kinds of layers.
+    
+    This class is an abstract base class and is intended to be used only as an 
+    interface for its derived classes. So, do not directly use it in neural
+    network.
     """
     
     # TODO: add operators: +, &
     
-    def __init__(self, name, trainable=True):
-        """Initialize a new Layer instance.
+    def __init__(self, name=None, trainable=True):
+        """Initialize attributes in Layer.
+        
+        This method should be called in the constructor of derived classes.
         """
         
         super(Layer, self).__init__(name)
         self.trainable = trainable
         self.params = []
+        
+    def call(self, flow):
+        """Construct the Layer in tensorflow graph.
+        
+        This method is intended to be implemented in derived classes.
+        """
+        
+        raise NotImplementedError
 
 class FullyConnected(Layer):
     """A simple fully connected feedforward layer.
     """
     
     
-    def __init__(self, name, n_output_units, activation_fn=None, 
+    def __init__(self, n_output_units, activation_fn=None, 
                  weight_init=None, bias_init=None, 
                  weight_regularizer=None, bias_regularizer=None, 
-                 has_bias=True, trainable=True):
+                 has_bias=True,  name=None, trainable=True):
         """Initializes a new FullyConnected instance.
         """
         
@@ -69,12 +83,13 @@ class FullyConnected(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
             
-    def call(self, flow, reuse=False):
+    def call(self, flow):
         """Construct the layer in tensorflow graph.
         """
             
-        with tf.variable_scope(self.name, reuse=reuse):
-            if not reuse:
+        with tf.variable_op_scope(
+            [flow], self.name, 'FC', reuse=self.reuse):
+            if not self.reuse:
                 prev_size = flow.get_shape()[1:].num_elements()
                 self.W = tf.get_variable(
                     'W', 
@@ -94,6 +109,8 @@ class FullyConnected(Layer):
                         trainable=self.trainable)
                     self.params.append(self.b)
                     tf.add_to_collection(tf.GraphKeys.BIASES, self.b)
+                
+                self.reuse = True
                     
             with tf.name_scope('affine'):
                 flat_input = tf.reshape(flow, (-1, prev_size))
@@ -108,17 +125,18 @@ class FullyConnected(Layer):
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, flow)
         return flow
                     
-class Convolution2D(Layer):
-    """2D Convolution layer.
+class Convolution(Layer):
+    """Convolution layer for 2D arrays.
     """
     
     
-    def __init__(self, name, filter_shape, n_output_channels, 
+    def __init__(self, filter_shape, n_output_channels, 
                  activation_fn='relu', strides=[1, 1], padding='SAME', 
                  weight_init=None, bias_init=None, 
                  weight_regularizer=None, bias_regularizer=None, 
-                 use_cudnn_on_gpu=True, has_bias=True, trainable=True):
-        """Initializes a new Convolution2D instance.
+                 use_cudnn_on_gpu=True, has_bias=True, 
+                 name=None, trainable=True):
+        """Initializes a new Convolution instance.
         """
         
         if weight_init is None:
@@ -126,7 +144,7 @@ class Convolution2D(Layer):
         if bias_init is None:
             bias_init = initializers.constant(0.1)
             
-        super(Convolution2D, self).__init__(name, trainable)
+        super(Convolution, self).__init__(name, trainable)
         
         self.filter_shape = list(filter_shape)
         self.n_output_channels = n_output_channels
@@ -156,12 +174,13 @@ class Convolution2D(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
         
-    def call(self, flow, reuse=False):
+    def call(self, flow):
         """Construct the layer in tensorflow graph.
         """
             
-        with tf.variable_scope(self.name, reuse=reuse):
-            if not reuse:
+        with tf.variable_op_scope(
+            [flow], self.name, 'Conv', reuse=self.reuse):
+            if not self.reuse:
                 full_shape = (self.filter_shape + [flow.get_shape()[-1].value, 
                      self.n_output_channels])
                 self.filter = tf.get_variable(
@@ -184,6 +203,7 @@ class Convolution2D(Layer):
                     tf.add_to_collection(tf.GraphKeys.BIASES, self.bias)
                     
                 tf.initialize_variables(self.params).run()
+                self.reuse = True
                     
             flow = tf.nn.conv2d(
                 flow,
@@ -200,17 +220,17 @@ class Convolution2D(Layer):
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, flow)
         return flow
             
-class Pooling2D(Layer):
+class Pooling(Layer):
     """Pooling layer for 2D arrays.
     """
     
     
-    def __init__(self, name, pool_shape=[2, 2], strides=[2, 2], mode='max',
-                 padding='VALID'):
-        """Initializes a new Convolution2D instance.
+    def __init__(self, pool_shape=[2, 2], strides=[2, 2], mode='max',
+                 padding='VALID', name=None):
+        """Initializes a new Pooling instance.
         """
         
-        super(Pooling2D, self).__init__(name)
+        super(Pooling, self).__init__(name)
         
         self.pool_shape = list(pool_shape)
         self.strides = list(strides)
@@ -223,11 +243,14 @@ class Pooling2D(Layer):
         else:
             raise ValueError('Unrecognized pooling mode {1}'.format(mode))
         
-    def call(self, flow, reuse=False):
+    def call(self, flow):
         """Construct the layer in tensorflow graph.
         """
             
-        with tf.variable_scope(self.name, reuse=reuse):
+        with tf.variable_op_scope([flow], self.name, 'Pool', reuse=self.reuse):
+            if not self.reuse:
+                self.reuse = True
+                
             flow = self._pool_fn(
                 flow,
                 [1] + self.pool_shape + [1],
@@ -242,7 +265,7 @@ class Input(Layer):
     """
     
         
-    def __init__(self, name, input_shape, input_dtype=tf.float32):
+    def __init__(self, input_shape, input_dtype=tf.float32, name=None):
         """Initializes a new Input instance.
         """
         
@@ -251,13 +274,16 @@ class Input(Layer):
         self.input_shape = list(input_shape)
         self.input_dtype=input_dtype
         
-    def call(self, flow=None, reuse=False):
+    def call(self, flow=None):
         """Construct the layer in tensorflow graph.
         """
         
-        with tf.variable_scope(self.name, reuse=reuse):
+        with tf.variable_op_scope(
+            [flow], self.name, 'Input', reuse=self.reuse):
+            if not self.reuse:
+                self.reuse = True
             flow = tf.placeholder(
-                self.input_dtype, [None] + self.input_shape.as_list(), 'input')
+                self.input_dtype, [None] + self.input_shape, 'input')
             tf.add_to_collection(GraphKeys.MODEL_INPUTS, flow)
         
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, flow)
@@ -266,9 +292,8 @@ class Input(Layer):
 class Embedding(Layer):
     """Embedding layer.
     """
-    # TODO: try assign and placeholder instead of tensor.
         
-    def __init__(self, name, input_shape, init_values, trainable=True):
+    def __init__(self, input_shape, init_values, name=None, trainable=True):
         """Initializes a new Input instance.
         """
             
@@ -280,12 +305,13 @@ class Embedding(Layer):
         self.table_loader = None
         self.lookup_table = None
         
-    def call(self, flow=None, reuse=False):
+    def call(self, flow=None):
         """Construct the layer in tensorflow graph.
         """
         
-        with tf.variable_scope(self.name, reuse=reuse):
-            if not reuse:
+        with tf.variable_op_scope(
+            [flow], self.name, 'Embedding', reuse=self.reuse):
+            if not self.reuse:
                 self.table_loader = tf.placeholder(
                     tf.float32, shape=self.init_values.shape, name='loader')
                 self.lookup_table = tf.get_variable(
@@ -295,6 +321,7 @@ class Embedding(Layer):
                 self.params.append(self.lookup_table)
                 tf.initialize_variables(self.params).run(
                     feed_dict={self.table_loader: self.init_values})
+                self.reuse = True
                 
             flow = tf.placeholder(
                 tf.int64, [None] + self.input_shape, 'input')                           

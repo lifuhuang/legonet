@@ -12,11 +12,11 @@ from legonet.regularizers import l2
 from legonet.optimizers import Adam
 
 nn = NeuralNetwork(optimizer=Adam(), log_dir='logs')
-nn.add(Input('input', 50))
-nn.add(FullyConnected('hidden1', 512, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected('hidden2', 256, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected('hidden3', 20, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected('output', 2, weight_regularizer=l2(0.001)))
+nn.add(Input([50], name='input'))
+nn.add(FullyConnected(512, 'relu', weight_regularizer=l2(0.001)))
+nn.add(FullyConnected(256, 'relu', weight_regularizer=l2(0.001)))
+nn.add(FullyConnected(32, 'relu', weight_regularizer=l2(0.001)))
+nn.add(FullyConnected(2, weight_regularizer=l2(0.001)))
 nn.build()
 
 

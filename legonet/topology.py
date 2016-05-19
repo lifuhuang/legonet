@@ -8,12 +8,12 @@ Created on Tue May 17 11:12:10 2016
 import tensorflow as tf
 
 class Node(object):
-    """Base class for all kinds of layers.
+    """Base class for all elements in graph.
     """
     
     # TODO: add operators: +, &
     
-    def __init__(self, name):
+    def __init__(self, name=None):
         """Initialize a new Node instance.
         
         Since Node is a abstract class, this method should only be called by
@@ -21,49 +21,51 @@ class Node(object):
         """
         
         self.name = name
+        self.reuse = False
     
-    def call(self, flow, reuse=False):
+    def call(self, flow):
         """Construct the Node in tensorflow graph.
         """
         
         raise NotImplementedError
         
 class Sequential(Node):
-    """# TODO: docstring
+    """Container Node whose inner nodes are in a sequential layout.
     """
     
     
-    def __init__(self, name):
+    def __init__(self, name=None):
         """Initialize a new instance of Sequential.
         """        
         
         super(Sequential, self).__init__(name)
         
-        self.layers = []
+        self.nodes = []
     
-    def call(self, flow=None, reuse=False):
-        """Construct the Sequential and its layers.
+    def call(self, flow=None):
+        """Construct the Sequential and its nodes.
         """
             
-        # build graph at layer level
-        with tf.variable_scope(self.name, reuse=reuse):
-            for layer in self.layers: 
-                flow = layer.call(flow, reuse)
+        with tf.variable_op_scope([flow], self.name, 'Sequential', reuse=self.reuse):
+            if not self.reuse:
+                self.reuse = True
+            for node in self.nodes: 
+                flow = node.call(flow)
                 
         return flow
 
-    def add(self, layer):
-        """Add a layer to this network.
+    def add(self, node):
+        """Add a node to this network.
         """
         
-        self.layers.append(layer)
+        self.nodes.append(node)
 
 class Parallel(Node):
-    """# TODO: docstring
+    """Container Node whose inner nodes are in a parallel layout.
     """
     
     
-    def __init__(self, name, mode='concat', along_dim=None):
+    def __init__(self, name=None, mode='concat', along_dim=None):
         """Initialize a new instance of Parallel.
         """        
         
@@ -71,32 +73,36 @@ class Parallel(Node):
             raise ValueError('Must specify along_dim for concat mode.')
         super(Parallel, self).__init__(name)
         
-        self.layers = []
+        self.nodes = []
         if mode not in ['concat', 'sum', 'mean']:
             raise ValueError('Unknown mode: {0}'.format(mode))            
         self.mode = mode
         self.along_dim = along_dim
         
-    def call(self, flow=None, reuse=False):
-        """Construct the Sequential and its layers.
+    def call(self, flow=None):
+        """Construct the Sequential and its nodes.
         """
         
-        # build graph at layer level
-        with tf.variable_scope(self.name, reuse=reuse):
+        # build graph at node level
+        with tf.variable_op_scope(
+            [flow], self.name, 'Parallel', reuse=self.reuse):
+            if not self.reuse:
+                self.reuse = True
+                
             outputs = []
-            for i, layer in enumerate(self.layers):        
-                outputs.append(layer.call(flow, reuse))
+            for i, node in enumerate(self.nodes):        
+                outputs.append(node.call(flow))
                 
             if self.mode == 'concat':
                 return tf.concat(self.along_dim, outputs)
             elif self.mode == 'mean':
-                return tf.add_n(outputs) / len(self.layers)
+                return tf.add_n(outputs) / len(self.nodes)
             elif self.mode == 'sum':
                 return tf.add_n(outputs)
 
-    def add(self, layer):
-        """Add a layer to this network.
+    def add(self, node):
+        """Add a node to this network.
         """
         
-        self.layers.append(layer)
+        self.nodes.append(node)
         
