@@ -33,9 +33,6 @@ def mean_square(output, labels):
     """Mean square error.
     """
     
-    print 'output', output
-    print 'labels', labels
-    print 'loss', tf.reduce_mean((output - labels) ** 2)
     return tf.reduce_mean((output - labels) ** 2)
     
 _objectives = {'softmax_cross_entropy': softmax_cross_entropy,
