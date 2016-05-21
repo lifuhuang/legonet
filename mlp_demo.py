@@ -21,7 +21,7 @@ nn.build()
 
 
 X = np.random.randn(1000, 50)
-y = np.random.randint(0, 2, (1000))
+y = np.random.randint(0, 2, 1000)
 
 try:
     nn.load_checkpoint('./checkpoints/')

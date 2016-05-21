@@ -3,4 +3,6 @@ class GraphKeys:
     """
     
     MODEL_INPUTS = "model_inputs"
-    
+
+    def __init__(self):
+        pass

@@ -10,7 +10,14 @@ from tensorflow.python.ops.nn import softmax
 from tensorflow import sigmoid
 from tensorflow import tanh
 
-identity = lambda x: x
+
+def identity(x):
+    """Return the input tensor without any change.
+    :param x: Input tensor.
+    :return: The input tensor.
+    """
+
+    return x
 
 _activations = {'relu': relu,
                 'identity': identity,
@@ -18,8 +25,11 @@ _activations = {'relu': relu,
                 'softmax': softmax,
                 'tanh': tanh}
 
+
 def get(name):
     """Return activation according to name.
+    :param name: name of activation function.
+    :return: the activation according to `name`.
     """
     
     if name not in _activations:
