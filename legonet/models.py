@@ -13,24 +13,21 @@ class NeuralNetwork(object):
     """Base classes of all neural networks.
     """
 
-    def __init__(self, optimizer, log_dir=None, output_fn=None, loss_fn=None, target_dtype=tf.int64, model=None,
-                 graph=None, session=None):
+    def __init__(self, optimizer, log_dir=None, output_fn="softmax", loss_fn="sparse_softmax_cross_entropy",
+                 target_dtype=tf.int64, model=None, graph=None, session=None):
         """Initialize a new instance of NeuralNetwork.
         :param optimizer: The optimizer used when training.
-        :param log_dir: The path of folder to output log files.
+        :param log_dir: The path of folder to output log files. Will not save log files if `None` is given.
         :param output_fn: A `str` or `callable` that indicates the function imposed on the output of `model`. `softmax`
-        is a common choice.
-        :param loss_fn: A 'str' or `callable`.
+        is a common choice. Do not impose any output function to output if `None` is given.
+        :param loss_fn: A 'str', `callable`. Will use `sparse_softmax_cross_entropy` as default if `None` is given.
         :param target_dtype: The data type of targets.
-        :param model: A `Node` object that contains the topology of this neural network.
-        :param graph: A TensorFlow `Graph`, will create a new one if this argument is set to be `None`.
-        :param session: A TensorFlow `Session`, will create a new one if this argument is set to be `None`.
+        :param model: A `Node` object representing the topological structure of this neural network in the highest
+        level. Will generate a new `Sequential` object as default if `None` is given.
+        :param graph: A TensorFlow `Graph`, will create a new one if `None` is given.
+        :param session: A TensorFlow `Session`, will create a new one if `None` is given.
         """
 
-        if output_fn is None:
-            output_fn = 'softmax'
-        if loss_fn is None:
-            loss_fn = 'sparse_softmax_cross_entropy'
         if model is None:
             model = Sequential('core')
 

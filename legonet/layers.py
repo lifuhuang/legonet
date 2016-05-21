@@ -28,8 +28,7 @@ class Layer(Node):
         
         This method should be called in the constructor of derived classes.
         :param name: name of this `Layer`.
-        :param trainable: Indicates whether the parameters of this layer will
-        be updated during training.
+        :param trainable: Indicates whether the parameters of this layer will be updated during training.
         """
 
         super(Layer, self).__init__(name)
@@ -55,17 +54,18 @@ class FullyConnected(Layer):
                  bias_regularizer=None, has_bias=True, name=None, trainable=True):
         """Initializes a new FullyConnected instance.
         :param n_output_units: Number of output units.
-        :param activation_fn: A `str` or a `callable` object.
-        :param weight_init: A `str` or a `callable` object.
-        :param bias_init: A `str` or a `callable` object.
-        :param weight_regularizer: A `callable` object.
-        :param bias_regularizer: A `callable` object.
+        :param activation_fn: A `str`, `callable`, or `None`.
+        :param weight_init: A `str` or `callable`. Will use xavier initializer as default if `None` is given.
+        :param bias_init: A `str` or `callable` object. Will use constant initializer as default if `None` is given.
+        :param weight_regularizer: A `callable` object or `None`.
+        :param bias_regularizer: A `callable` object or `None`.
         :param has_bias: Indicates whether there is bias units in this layer.
         :param name: Name of this Layer.
-        :param trainable: Indicates whether the parameters of this layer will
-        be updated during training.
+        :param trainable: Indicates whether the parameters of this layer will be updated during training.
         """
 
+        if activation_fn is None:
+            activation_fn = activations.identity
         if weight_init is None:
             weight_init = initializers.xavier()
         if bias_init is None:
@@ -83,21 +83,21 @@ class FullyConnected(Layer):
         elif callable(activation_fn):
             self._activation_fn = activation_fn
         else:
-            raise ValueError("activation_fn should be either a str or callable.")
+            raise ValueError("activation_fn can only be a str, callable, or None.")
 
         if isinstance(weight_init, str):
             self._weight_init = initializers.get(weight_init)
         elif callable(weight_init):
             self._weight_init = weight_init
         else:
-            raise ValueError("weight_init should be either a str or callable.")
+            raise ValueError("weight_init can only be a str, callable, or None.")
 
         if isinstance(bias_init, str):
             self._bias_init = initializers.get(bias_init)
         elif callable(bias_init):
             self._bias_init = bias_init
         else:
-            raise ValueError("bias_init should be either a str or callable")
+            raise ValueError("bias_init can only be a str, a callable, or None.")
 
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
@@ -156,19 +156,17 @@ class Convolution(Layer):
         """Initializes a new Convolution instance.
         :param filter_shape: A sequence with two elements.
         :param n_output_channels: Number of output channels.
-        :param activation_fn: A `str` or `callable` object.
-        :param strides: A sequence with two elements.
+        :param activation_fn: A `str`, `callable`, or `None`.
+        :param strides: A sequence with two elements. Defaults to `[1, 1]`.
         :param padding: Either `SAME` or `VALID`.
-        :param weight_init: A `str` or a `callable` object.
-        :param bias_init: A `str` or a `callable` object.
-        :param weight_regularizer: A `callable` object.
-        :param bias_regularizer: A `callable` object.
+        :param weight_init: A `str` or `callable`. Defaults to `xavier_conv2d` initializer.
+        :param bias_init: A `str` or `callable` object. Defaults to `constant` initializer.
+        :param weight_regularizer: A `callable` object or `None`.
+        :param bias_regularizer: A `callable` object or `None`.
         :param has_bias: Indicates whether there is bias units in this layer.
         :param name: Name of this Layer.
-        :param use_cudnn_on_gpu: Indicates whether the convolution operation
-        uses cudnn on GPU.
-        :param trainable: Indicates whether the parameters of this layer will
-        be updated during training.
+        :param use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.
+        :param trainable: Indicates whether the parameters of this layer will be updated during training.
         """
 
         if strides is None:
@@ -267,8 +265,8 @@ class Pooling(Layer):
 
     def __init__(self, pool_shape=None, strides=None, mode='max', padding='VALID', name=None):
         """Initializes a new Pooling instance.
-        :param pool_shape: A sequence with two elements.
-        :param strides: A sequence with two elements.
+        :param pool_shape: A sequence with two elements. Defaults to [2, 2].
+        :param strides: A sequence with two elements. Defaults to [2, 2].
         :param mode: Either `max` or `average`.
         :param padding: Either `SAME` or `VALID`.
         :param name: The name of this layer.
@@ -352,8 +350,7 @@ class Embedding(Layer):
         :param input_shape: A sequence with two elements.
         :param init_values: A array used to initialize lookup table.
         :param name: The name of this layer.
-        :param trainable: Indicates whether the parameters of this layer will
-        be updated during training.
+        :param trainable: Indicates whether the parameters of this layer will be updated during training.
         """
 
         super(Embedding, self).__init__(name, trainable)
