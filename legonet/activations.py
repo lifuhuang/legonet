@@ -5,10 +5,8 @@ Created on Sat Apr 23 15:55:04 2016
 @author: lifu
 """
 
-from tensorflow.python.ops.nn import relu
-from tensorflow.python.ops.nn import softmax
-from tensorflow import sigmoid
-from tensorflow import tanh
+
+import tensorflow as tf
 
 
 def identity(x):
@@ -18,6 +16,43 @@ def identity(x):
     """
 
     return x
+
+
+def relu(x):
+    """Compute the rectified linear of x.
+    :param x: Input tensor.
+    :return: A `Tensor` of same shape as `x`.
+    """
+
+    return tf.nn.relu(x)
+
+
+def tanh(x):
+    """Compute the hyperbolic tangent of x.
+    :param x: Input tensor.
+    :return: A `Tensor` of same shape as `x`.
+    """
+
+    return tf.tanh(x)
+
+
+def sigmoid(x):
+    """Compute the sigmoid of x.
+    :param x: Input tensor.
+    :return: A `Tensor` of same shape as `x`.
+    """
+
+    return tf.sigmoid(x)
+
+
+def softmax(x):
+    """Compute the softmax of x.
+    :param x: Input tensor.
+    :return: A `Tensor` of same shape as `x`.
+    """
+
+    return tf.nn.softmax(x)
+
 
 _activations = {'relu': relu,
                 'identity': identity,

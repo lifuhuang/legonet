@@ -5,6 +5,7 @@ Created on Tue May 17 11:12:10 2016
 @author: lifu
 """
 
+
 import tensorflow as tf
 
 
@@ -19,6 +20,7 @@ class Node(object):
         
         Since Node is a abstract class, this method should only be called by
         its derived classes.
+        :param name: Name of this `Node`. Use default name if `None` is passed.
         """
 
         self.name = name
@@ -38,6 +40,7 @@ class Sequential(Node):
 
     def __init__(self, name=None):
         """Initialize a new instance of Sequential.
+        :param name: Name of this `Node`. Use default name if `None` is passed.
         """
 
         super(Sequential, self).__init__(name)
@@ -45,7 +48,7 @@ class Sequential(Node):
         self.nodes = []
 
     def call(self, flow=None):
-        """Construct the Sequential and its nodes.
+        """Construct the Sequential and its `Node`s.
         :param flow: Input `Tensor` object.
         :return: Output of this `Node`.
         """
@@ -72,6 +75,10 @@ class Parallel(Node):
 
     def __init__(self, name=None, mode='concat', along_dim=None):
         """Initialize a new instance of Parallel.
+        :param name: Name of this `Node`. Use default name if `None` is passed.
+        :param mode: The way to merge paralleled `Node`s. Now supports "concat", "sum", "mean".
+        :param along_dim: The dimension along which the merging operation will be done. Only take effect in "concat"
+        mode.
         """
 
         if mode == 'concat' and along_dim is None:
@@ -107,7 +114,7 @@ class Parallel(Node):
                 return tf.add_n(outputs)
 
     def add(self, node):
-        """Add a node to this network.
+        """Add a `Node` to this network.
         :param node: A `Node` object.
         """
 
