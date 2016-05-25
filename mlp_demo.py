@@ -12,16 +12,15 @@ from legonet.regularizers import l2
 from legonet.optimizers import Adam
 
 nn = NeuralNetwork(optimizer=Adam(), log_dir='logs')
-nn.add(Input([50], name='input'))
-nn.add(FullyConnected(512, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected(256, 'relu', weight_regularizer=l2(0.001)))
+nn.add(Input(128))
+nn.add(FullyConnected(64, 'relu', weight_regularizer=l2(0.001)))
 nn.add(FullyConnected(32, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected(2, weight_regularizer=l2(0.001)))
+nn.add(FullyConnected(5, weight_regularizer=l2(0.001)))
 nn.build()
 
 
-X = np.random.randn(1000, 50)
-y = np.random.randint(0, 2, 1000)
+X = np.random.randn(1000, 128)
+y = np.random.randint(0, 5, 1000)
 
 try:
     nn.load_checkpoint('./checkpoints/')

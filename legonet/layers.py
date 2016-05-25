@@ -321,6 +321,9 @@ class Input(Layer):
         :param name: The name of this layer. Use default name if `None` is passed.
         """
 
+        if isinstance(input_shape, int):
+            input_shape = [input_shape]
+
         super(Input, self).__init__(name)
 
         self.input_shape = list(input_shape)
