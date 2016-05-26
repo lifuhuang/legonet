@@ -25,7 +25,7 @@ y = np.random.randint(0, 5, 1000)
 try:
     nn.load_checkpoint('./checkpoints/')
     print 'checkpoint loaded!'
-except Exception as e:
+except ValueError as e:
     print 'File not found!'
 nn.fit(X, y, n_epochs=1000, batch_size=64, 
        freq_checkpoint=10000, checkpoint_dir='./checkpoints/', loss_decay=0.9)
