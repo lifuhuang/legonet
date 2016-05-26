@@ -63,7 +63,7 @@ try:
     nn.load_checkpoint('./checkpoints/')
     print 'checkpoint loaded!'
 except Exception as e:
-    print 'File not found!'
+    print 'Cannot load checkpoint file, a new model is used!'
 
 if mode == 'train':
     nn.fit(X_train, Y_train, n_epochs=1000, batch_size=8, freq_checkpoint=100, freq_log=10,

@@ -34,8 +34,8 @@ Y_test = mnist.test.labels[:1000]
 try:
     nn.load_checkpoint('./checkpoints/')
     print 'checkpoint loaded!'
-except ValueError as e:
-    print 'File not found!'
+except Exception as e:
+    print 'Cannot load checkpoint file, a new model is used!'
     
 if mode == 'train':
     nn.fit(X_train, Y_train, n_epochs=10, batch_size=16,

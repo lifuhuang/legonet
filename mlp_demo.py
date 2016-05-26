@@ -13,9 +13,9 @@ from legonet.optimizers import Adam
 
 nn = NeuralNetwork(optimizer=Adam(), log_dir='logs')
 nn.add(Input(128))
-nn.add(FullyConnected(64, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected(32, 'relu', weight_regularizer=l2(0.001)))
-nn.add(FullyConnected(5, weight_regularizer=l2(0.001)))
+nn.add(FullyConnected(64, 'relu', weight_regularizer=l2(0.001), name="FC1"))
+nn.add(FullyConnected(32, 'relu', weight_regularizer=l2(0.001), name="FC2"))
+nn.add(FullyConnected(5, weight_regularizer=l2(0.001), name="Output"))
 nn.build()
 
 
@@ -25,7 +25,7 @@ y = np.random.randint(0, 5, 1000)
 try:
     nn.load_checkpoint('./checkpoints/')
     print 'checkpoint loaded!'
-except ValueError as e:
-    print 'File not found!'
+except Exception as e:
+    print 'Cannot load checkpoint file, a new model is used!'
 nn.fit(X, y, n_epochs=1000, batch_size=64, 
        freq_checkpoint=10000, checkpoint_dir='./checkpoints/', loss_decay=0.9)
