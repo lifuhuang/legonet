@@ -30,8 +30,8 @@ class Layer(Node):
         This method should be called in the constructor of derived classes.
 
         Args:
-          name: name of this `Layer`. Use default name if `None` is given.
-          trainable: Indicates whether the parameters of this layer will be updated during training.
+            name: name of this `Layer`. Use default name if `None` is given.
+            trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
 
@@ -45,10 +45,10 @@ class Layer(Node):
         This method is intended to be implemented in derived classes.
 
         Args:
-          flow: The input tensor.
+            flow: The input tensor.
 
         Returns:
-          Output of this layer.
+            Output of this layer.
 
         """
 
@@ -63,15 +63,15 @@ class FullyConnected(Layer):
         """Initializes a new FullyConnected instance.
 
         Args:
-          n_output_units: Number of output units.
-          activation_fn: A `str`, `callable`, or `None`.
-          weight_init: A `str`, `callable`, or `None`. Use `xavier` as default if `None` is passed.
-          bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
-          weight_regularizer: A `callable` or `None`.
-          bias_regularizer: A `callable` or `None`.
-          has_bias: Indicates whether there are bias units in this layer.
-          name: Name of this Layer. Use default if `None` is passed.
-          trainable: Indicates whether the parameters of this layer will be updated during training.
+            n_output_units: Number of output units.
+            activation_fn: A `str`, `callable`, or `None`.
+            weight_init: A `str`, `callable`, or `None`. Use `xavier` as default if `None` is passed.
+            bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
+            weight_regularizer: A `callable` or `None`.
+            bias_regularizer: A `callable` or `None`.
+            has_bias: Indicates whether there are bias units in this layer.
+            name: Name of this Layer. Use default if `None` is passed.
+            trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
 
@@ -117,10 +117,10 @@ class FullyConnected(Layer):
         """Construct the layer in tensorflow graph.
 
         Args:
-          flow: The input tensor.
+            flow: The input tensor.
 
         Returns:
-          Output of this layer.
+            Output of this layer.
 
         """
 
@@ -171,19 +171,19 @@ class Convolution(Layer):
         """Initializes a new Convolution instance.
 
         Args:
-          filter_shape: A sequence with two elements.
-          n_output_channels: Number of output channels.
-          activation_fn: A `str`, `callable`, or `None`.
-          strides: A sequence with two elements. Defaults to `[1, 1]`.
-          padding: Either `SAME` or `VALID`.
-          weight_init: A `str`, `callable`, or `None`. Use `xavier_conv2d` as default if `None` is passed.
-          bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
-          weight_regularizer: A `callable` or `None`.
-          bias_regularizer: A `callable` or `None`.
-          use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.
-          has_bias: Indicates whether there are bias units in this layer.
-          name: Name of this Layer. Use default name if `None` is passed.
-          trainable: Indicates whether the parameters of this layer will be updated during training.
+            filter_shape: A sequence with two elements.
+            n_output_channels: Number of output channels.
+            activation_fn: A `str`, `callable`, or `None`.
+            strides: A sequence with two elements. Defaults to `[1, 1]`.
+            padding: Either `SAME` or `VALID`.
+            weight_init: A `str`, `callable`, or `None`. Use `xavier_conv2d` as default if `None` is passed.
+            bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
+            weight_regularizer: A `callable` or `None`.
+            bias_regularizer: A `callable` or `None`.
+            use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.
+            has_bias: Indicates whether there are bias units in this layer.
+            name: Name of this Layer. Use default name if `None` is passed.
+            trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
 
@@ -234,10 +234,10 @@ class Convolution(Layer):
         """Construct the layer in tensorflow graph.
 
         Args:
-          flow: The input tensor
+            flow: The input tensor
 
         Returns:
-          Output of this layer.
+            Output of this layer.
 
         """
 
@@ -289,11 +289,11 @@ class Pooling(Layer):
         """Initializes a new Pooling instance.
 
         Args:
-          pool_shape: A sequence with two elements. Defaults to [2, 2].
-          strides: A sequence with two elements. Defaults to [2, 2].
-          mode: Either `max` or `average`.
-          padding: Either `SAME` or `VALID`.
-          name: The name of this layer. Use default name if `None` is given.
+            pool_shape: A sequence with two elements. Defaults to [2, 2].
+            strides: A sequence with two elements. Defaults to [2, 2].
+            mode: Either `max` or `average`.
+            padding: Either `SAME` or `VALID`.
+            name: The name of this layer. Use default name if `None` is given.
 
         """
 
@@ -318,10 +318,10 @@ class Pooling(Layer):
         """Construct the layer in tensorflow graph.
 
         Args:
-          flow: The input tensor.
+            flow: The input tensor.
 
         Returns:
-          Output of this layer.
+            Output of this layer.
 
         """
 
@@ -346,9 +346,9 @@ class Input(Layer):
         """Initializes a new Input instance.
 
         Args:
-          input_shape: A sequence or an `int`.
-          input_dtype: The data type of input. Defaults to `float32`.
-          name: The name of this layer. Use default name if `None` is passed.
+            input_shape: A sequence or an `int`.
+            input_dtype: The data type of input. Defaults to `float32`.
+            name: The name of this layer. Use default name if `None` is passed.
 
         """
 
@@ -364,10 +364,10 @@ class Input(Layer):
         """Construct the layer in tensorflow graph.
 
         Args:
-          flow: Deprecated, will be ignored. (Default value = None)
+            flow: Deprecated, will be ignored. (Default value = None)
 
         Returns:
-          Output of this layer.
+            Output of this layer.
 
         """
 
@@ -388,10 +388,10 @@ class Embedding(Layer):
         """Initializes a new Input instance.
 
         Args:
-          input_shape: A sequence with two elements.
-          init_values: A array used to initialize lookup table.
-          name: The name of this layer. Use default name if `None` is passed.
-          trainable: Indicates whether the parameters of this layer will be updated during training.
+            input_shape: A sequence with two elements.
+            init_values: A array used to initialize lookup table.
+            name: The name of this layer. Use default name if `None` is passed.
+            trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
 
@@ -407,10 +407,10 @@ class Embedding(Layer):
         """Construct the layer in tensorflow graph.
 
         Args:
-          flow: Deprecated, will be ignored. (Default value = None)
+            flow: Deprecated, will be ignored. (Default value = None)
 
         Returns:
-          Output of this layer.
+            Output of this layer.
 
         """
 

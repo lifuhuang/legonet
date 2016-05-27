@@ -21,7 +21,7 @@ class Node(object):
         its derived classes.
 
         Args:
-          name: Name of this `Node`. Use default name if `None` is passed.
+            name: Name of this `Node`. Use default name if `None` is passed.
 
         """
 
@@ -32,10 +32,10 @@ class Node(object):
         """Construct the Node in tensorflow graph.
 
         Args:
-          flow: The input `Tensor` to this `Node`.
+            flow: The input `Tensor` to this `Node`.
 
         Returns:
-          None
+            None
 
         """
 
@@ -49,7 +49,7 @@ class Sequential(Node):
         """Initialize a new instance of Sequential.
 
         Args:
-          name: Name of this `Node`. Use default name if `None` is passed.
+            name: Name of this `Node`. Use default name if `None` is passed.
 
         """
 
@@ -61,10 +61,10 @@ class Sequential(Node):
         """Construct the Sequential and its `Node`s.
 
         Args:
-          flow: Input `Tensor` object. (Default value = None)
+            flow: Input `Tensor` object. (Default value = None)
 
         Returns:
-          Output of this `Node`.
+            Output of this `Node`.
 
         """
 
@@ -80,10 +80,10 @@ class Sequential(Node):
         """Add a node to this network.
 
         Args:
-          node: A `Node` object.
+            node: A `Node` object.
 
         Returns:
-          None
+            None
 
         """
 
@@ -97,9 +97,9 @@ class Parallel(Node):
         """Initialize a new instance of Parallel.
 
         Args:
-          name: Name of this `Node`. Use default name if `None` is passed.
-          mode: The way to merge paralleled `Node`s. Now supports "concat", "sum", "mean".
-          along_dim: The dimension along which the merging operation will be done. Only take effect in "concat"
+            name: Name of this `Node`. Use default name if `None` is passed.
+            mode: The way to merge paralleled `Node`s. Now supports "concat", "sum", "mean".
+            along_dim: The dimension along which the merging operation will be done. Only take effect in "concat"
         mode.
 
         """
@@ -118,10 +118,10 @@ class Parallel(Node):
         """Construct the Sequential and its nodes.
 
         Args:
-          flow: Input `Tensor` object. (Default value = None)
+            flow: Input `Tensor` object. (Default value = None)
 
         Returns:
-          Output of this `Node`.
+            Output of this `Node`.
 
         """
 
@@ -145,10 +145,10 @@ class Parallel(Node):
         """Add a `Node` to this network.
 
         Args:
-          node: A `Node` object.
+            node: A `Node` object.
 
         Returns:
-          None
+            None
 
         """
 

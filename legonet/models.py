@@ -25,16 +25,16 @@ class NeuralNetwork(object):
         """Initialize a new instance of NeuralNetwork.
 
         Args:
-          optimizer: The optimizer used when training.
-          log_dir: The path of folder to output log files. Will not save log files if `None` is given.
-          output_fn: A `str` or `callable` that indicates the function imposed on the output of `model`. `softmax`
+            optimizer: The optimizer used when training.
+            log_dir: The path of folder to output log files. Will not save log files if `None` is given.
+            output_fn: A `str` or `callable` that indicates the function imposed on the output of `model`. `softmax`
         is a common choice. Do not impose any output function to output if `None` is given.
-          loss_fn: A 'str', `callable`. Will use `sparse_softmax_cross_entropy` as default if `None` is given.
-          target_dtype: The data type of targets.
-          model: A `Node` object representing the topological structure of this neural network in the highest
+            loss_fn: A 'str', `callable`. Will use `sparse_softmax_cross_entropy` as default if `None` is given.
+            target_dtype: The data type of targets.
+            model: A `Node` object representing the topological structure of this neural network in the highest
         level. Will generate a new `Sequential` object as default if `None` is given.
-          graph: A TensorFlow `Graph`, will create a new one if `None` is given.
-          session: A TensorFlow `Session`, will create a new one if `None` is given.
+            graph: A TensorFlow `Graph`, will create a new one if `None` is given.
+            session: A TensorFlow `Session`, will create a new one if `None` is given.
 
         """
 
@@ -90,10 +90,10 @@ class NeuralNetwork(object):
         """Load checkpoint from a file or directory.
 
         Args:
-          path: Path of folder containing checkpoint files. (Default value = None)
+            path: Path of folder containing checkpoint files. (Default value = None)
 
         Returns:
-          None
+            None
 
         """
 
@@ -106,18 +106,18 @@ class NeuralNetwork(object):
         """Train this model using x and y.
 
         Args:
-          x: Input array.
-          y: Targets array, should be consistent with target_dtype.
-          n_epochs: Number of epochs to iterate. (Default value = 5)
-          batch_size: Size of mini-batch. (Default value = 32)
-          checkpoint_dir: Path to the folder to store checkpoint files. (Default value = None)
-          randomized: Indicates whether use select mini-batch randomly. (Default value = True)
-          freq_log: The frequency of logging. (Default value = 100)
-          freq_checkpoint: The frequency of saving parameters to checkpoint files. (Default value = 10000)
-          loss_decay: The decay rate used for displaying exponential moving average of loss. (Default value = 0.0)
+            x: Input array.
+            y: Targets array, should be consistent with target_dtype.
+            n_epochs: Number of epochs to iterate. (Default value = 5)
+            batch_size: Size of mini-batch. (Default value = 32)
+            checkpoint_dir: Path to the folder to store checkpoint files. (Default value = None)
+            randomized: Indicates whether use select mini-batch randomly. (Default value = True)
+            freq_log: The frequency of logging. (Default value = 100)
+            freq_checkpoint: The frequency of saving parameters to checkpoint files. (Default value = 10000)
+            loss_decay: The decay rate used for displaying exponential moving average of loss. (Default value = 0.0)
 
         Returns:
-          None
+            None
 
         """
 
@@ -187,10 +187,10 @@ class NeuralNetwork(object):
         """Output result given input.
 
         Args:
-          x: Input array.
+            x: Input array.
 
         Returns:
-          None
+            None
 
         """
 
@@ -246,10 +246,10 @@ class NeuralNetwork(object):
         """Add a layer to the model inside this NeuralNetwork.
 
         Args:
-          layer: a Layer instance
+            layer: a Layer instance
 
         Returns:
-          None
+            None
 
         """
 
