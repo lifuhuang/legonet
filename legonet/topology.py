@@ -58,7 +58,7 @@ class Sequential(Node):
         self.nodes = []
 
     def call(self, flow=None):
-        """Construct the Sequential and its `Node`s.
+        """Construct the Sequential and its `Node` s.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)

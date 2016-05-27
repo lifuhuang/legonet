@@ -1,0 +1,521 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>legonet.layers &mdash; legonet  documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="legonet  documentation" href="../../index.html" />
+    <link rel="up" title="legonet" href="../legonet.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for legonet.layers</h1><div class="highlight"><pre>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Sat Apr 23 23:17:39 2016</span>
+
+<span class="sd">@author: lifu</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="kn">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">initializers</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">activations</span>
+<span class="kn">from</span> <span class="nn">.topology</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">GraphKeys</span>
+
+
+<div class="viewcode-block" id="Layer"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Layer">[docs]</a><span class="k">class</span> <span class="nc">Layer</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract base class for all kinds of layers.</span>
+<span class="sd">    </span>
+<span class="sd">    This class is an abstract base class and is intended to be used only as an</span>
+<span class="sd">    interface for its derived classes. So, do not directly use it in neural</span>
+<span class="sd">    network.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># TODO: add operators: +, &amp;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize attributes in Layer.</span>
+
+<span class="sd">        This method should be called in the constructor of derived classes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: name of this `Layer`. Use default name if `None` is given.</span>
+<span class="sd">            trainable: Indicates whether the parameters of this layer will be updated during training.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Layer</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="n">trainable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Layer.call"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Layer.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the Layer in tensorflow graph.</span>
+<span class="sd">        </span>
+<span class="sd">        This method is intended to be implemented in derived classes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow: The input tensor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Output of this layer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+
+
+<div class="viewcode-block" id="FullyConnected"><a class="viewcode-back" href="../../legonet.html#legonet.layers.FullyConnected">[docs]</a><span class="k">class</span> <span class="nc">FullyConnected</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A simple fully connected feedforward layer.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_output_units</span><span class="p">,</span> <span class="n">activation_fn</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_init</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">bias_init</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_regularizer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">bias_regularizer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">has_bias</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a new FullyConnected instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_output_units: Number of output units.</span>
+<span class="sd">            activation_fn: A `str`, `callable`, or `None`.</span>
+<span class="sd">            weight_init: A `str`, `callable`, or `None`. Use `xavier` as default if `None` is passed.</span>
+<span class="sd">            bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.</span>
+<span class="sd">            weight_regularizer: A `callable` or `None`.</span>
+<span class="sd">            bias_regularizer: A `callable` or `None`.</span>
+<span class="sd">            has_bias: Indicates whether there are bias units in this layer.</span>
+<span class="sd">            name: Name of this Layer. Use default if `None` is passed.</span>
+<span class="sd">            trainable: Indicates whether the parameters of this layer will be updated during training.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">activation_fn</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">activation_fn</span> <span class="o">=</span> <span class="n">activations</span><span class="o">.</span><span class="n">identity</span>
+        <span class="k">if</span> <span class="n">weight_init</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">weight_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">xavier</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">bias_init</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">bias_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">constant</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">FullyConnected</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_output_units</span> <span class="o">=</span> <span class="n">n_output_units</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_bias</span> <span class="o">=</span> <span class="n">has_bias</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation_fn</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="o">=</span> <span class="n">activations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">activation_fn</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">activation_fn</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="o">=</span> <span class="n">activation_fn</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;activation_fn can only be a str, callable, or None.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weight_init</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">weight_init</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">weight_init</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_init</span> <span class="o">=</span> <span class="n">weight_init</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weight_init can only be a str, callable, or None.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bias_init</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bias_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bias_init</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">bias_init</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bias_init</span> <span class="o">=</span> <span class="n">bias_init</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;bias_init can only be a str, a callable, or None.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_regularizer</span> <span class="o">=</span> <span class="n">weight_regularizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bias_regularizer</span> <span class="o">=</span> <span class="n">bias_regularizer</span>
+
+<div class="viewcode-block" id="FullyConnected.call"><a class="viewcode-back" href="../../legonet.html#legonet.layers.FullyConnected.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the layer in tensorflow graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow: The input tensor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Output of this layer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">variable_op_scope</span><span class="p">([</span><span class="n">flow</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;FC&#39;</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">):</span>
+            <span class="n">prev_size</span> <span class="o">=</span> <span class="n">flow</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">num_elements</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">W</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span>
+                    <span class="s1">&#39;W&#39;</span><span class="p">,</span>
+                    <span class="p">[</span><span class="n">prev_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_output_units</span><span class="p">],</span>
+                    <span class="n">initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_init</span><span class="p">,</span>
+                    <span class="n">regularizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_regularizer</span><span class="p">,</span>
+                    <span class="n">trainable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainable</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">)</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">WEIGHTS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_bias</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span>
+                        <span class="s1">&#39;b&#39;</span><span class="p">,</span>
+                        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_output_units</span><span class="p">],</span>
+                        <span class="n">initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_bias_init</span><span class="p">,</span>
+                        <span class="n">regularizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_bias_regularizer</span><span class="p">,</span>
+                        <span class="n">trainable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainable</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">BIASES</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">name_scope</span><span class="p">(</span><span class="s1">&#39;affine&#39;</span><span class="p">):</span>
+                <span class="n">flat_input</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">prev_size</span><span class="p">))</span>
+                <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">flat_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">)</span>
+                <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">bias_add</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">)</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">initialize_variables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">name_scope</span><span class="p">(</span><span class="s1">&#39;activation_fn&#39;</span><span class="p">):</span>
+                    <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+
+        <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">ACTIVATIONS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flow</span></div></div>
+
+
+<div class="viewcode-block" id="Convolution"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Convolution">[docs]</a><span class="k">class</span> <span class="nc">Convolution</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convolution layer for 2D arrays.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_shape</span><span class="p">,</span> <span class="n">n_output_channels</span><span class="p">,</span> <span class="n">activation_fn</span><span class="o">=</span><span class="s1">&#39;relu&#39;</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;SAME&#39;</span><span class="p">,</span>
+                 <span class="n">weight_init</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">bias_init</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_regularizer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">bias_regularizer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">use_cudnn_on_gpu</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">has_bias</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a new Convolution instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            filter_shape: A sequence with two elements.</span>
+<span class="sd">            n_output_channels: Number of output channels.</span>
+<span class="sd">            activation_fn: A `str`, `callable`, or `None`.</span>
+<span class="sd">            strides: A sequence with two elements. Defaults to `[1, 1]`.</span>
+<span class="sd">            padding: Either `SAME` or `VALID`.</span>
+<span class="sd">            weight_init: A `str`, `callable`, or `None`. Use `xavier_conv2d` as default if `None` is passed.</span>
+<span class="sd">            bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.</span>
+<span class="sd">            weight_regularizer: A `callable` or `None`.</span>
+<span class="sd">            bias_regularizer: A `callable` or `None`.</span>
+<span class="sd">            use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.</span>
+<span class="sd">            has_bias: Indicates whether there are bias units in this layer.</span>
+<span class="sd">            name: Name of this Layer. Use default name if `None` is passed.</span>
+<span class="sd">            trainable: Indicates whether the parameters of this layer will be updated during training.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">strides</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">strides</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">weight_init</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">weight_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">xavier_conv2d</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">bias_init</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">bias_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Convolution</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">filter_shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_output_channels</span> <span class="o">=</span> <span class="n">n_output_channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strides</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="n">padding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_cudnn_on_gpu</span> <span class="o">=</span> <span class="n">use_cudnn_on_gpu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_bias</span> <span class="o">=</span> <span class="n">has_bias</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">activation_fn</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="o">=</span> <span class="n">activations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">activation_fn</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">activation_fn</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="o">=</span> <span class="n">activation_fn</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;activation_fn should be either a str or callable.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weight_init</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">weight_init</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">weight_init</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_weight_init</span> <span class="o">=</span> <span class="n">weight_init</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weight_init should be either a str or callable.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bias_init</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bias_init</span> <span class="o">=</span> <span class="n">initializers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bias_init</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">bias_init</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bias_init</span> <span class="o">=</span> <span class="n">bias_init</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;bias_init should be either a str or callable&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight_regularizer</span> <span class="o">=</span> <span class="n">weight_regularizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bias_regularizer</span> <span class="o">=</span> <span class="n">bias_regularizer</span>
+
+<div class="viewcode-block" id="Convolution.call"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Convolution.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the layer in tensorflow graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow: The input tensor</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Output of this layer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">variable_op_scope</span><span class="p">([</span><span class="n">flow</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Conv&#39;</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">:</span>
+                <span class="n">full_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_shape</span> <span class="o">+</span> <span class="p">[</span><span class="n">flow</span><span class="o">.</span><span class="n">get_shape</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_output_channels</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span>
+                    <span class="s1">&#39;filter&#39;</span><span class="p">,</span>
+                    <span class="n">full_shape</span><span class="p">,</span>
+                    <span class="n">initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_init</span><span class="p">,</span>
+                    <span class="n">regularizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight_regularizer</span><span class="p">,</span>
+                    <span class="n">trainable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainable</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">)</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">WEIGHTS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_bias</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span>
+                        <span class="s1">&#39;bias&#39;</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">n_output_channels</span><span class="p">,</span>
+                        <span class="n">initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_bias_init</span><span class="p">,</span>
+                        <span class="n">regularizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_bias_regularizer</span><span class="p">,</span>
+                        <span class="n">trainable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainable</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">BIASES</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+
+                <span class="n">tf</span><span class="o">.</span><span class="n">initialize_variables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">conv2d</span><span class="p">(</span>
+                <span class="n">flow</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strides</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">use_cudnn_on_gpu</span><span class="p">)</span>
+
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">bias_add</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_activation_fn</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+
+        <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">ACTIVATIONS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flow</span></div></div>
+
+
+<div class="viewcode-block" id="Pooling"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Pooling">[docs]</a><span class="k">class</span> <span class="nc">Pooling</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Pooling layer for 2D arrays.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pool_shape</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;max&#39;</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s1">&#39;VALID&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a new Pooling instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pool_shape: A sequence with two elements. Defaults to [2, 2].</span>
+<span class="sd">            strides: A sequence with two elements. Defaults to [2, 2].</span>
+<span class="sd">            mode: Either `max` or `average`.</span>
+<span class="sd">            padding: Either `SAME` or `VALID`.</span>
+<span class="sd">            name: The name of this layer. Use default name if `None` is given.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Pooling</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pool_shape</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">pool_shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">strides</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">strides</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pool_shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strides</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">strides</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="n">padding</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pool_fn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">max_pool</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;average&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pool_fn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">avg_pool</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unrecognized pooling mode {0}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mode</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Pooling.call"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Pooling.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the layer in tensorflow graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow: The input tensor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Output of this layer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">variable_op_scope</span><span class="p">([</span><span class="n">flow</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Pool&#39;</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool_fn</span><span class="p">(</span>
+                <span class="n">flow</span><span class="p">,</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_shape</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">strides</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">)</span>
+
+        <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">ACTIVATIONS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flow</span></div></div>
+
+
+<div class="viewcode-block" id="Input"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Input">[docs]</a><span class="k">class</span> <span class="nc">Input</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Input layer.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">,</span> <span class="n">input_dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a new Input instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_shape: A sequence or an `int`.</span>
+<span class="sd">            input_dtype: The data type of input. Defaults to `float32`.</span>
+<span class="sd">            name: The name of this layer. Use default name if `None` is passed.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_shape</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">input_shape</span> <span class="o">=</span> <span class="p">[</span><span class="n">input_shape</span><span class="p">]</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Input</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_dtype</span> <span class="o">=</span> <span class="n">input_dtype</span>
+
+<div class="viewcode-block" id="Input.call"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Input.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the layer in tensorflow graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow: Deprecated, will be ignored. (Default value = None)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Output of this layer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">variable_op_scope</span><span class="p">([],</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Input&#39;</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dtype</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">)</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">MODEL_INPUTS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+
+        <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">ACTIVATIONS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flow</span></div></div>
+
+
+<div class="viewcode-block" id="Embedding"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Embedding">[docs]</a><span class="k">class</span> <span class="nc">Embedding</span><span class="p">(</span><span class="n">Layer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Embedding layer.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">,</span> <span class="n">init_values</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">trainable</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a new Input instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            input_shape: A sequence with two elements.</span>
+<span class="sd">            init_values: A array used to initialize lookup table.</span>
+<span class="sd">            name: The name of this layer. Use default name if `None` is passed.</span>
+<span class="sd">            trainable: Indicates whether the parameters of this layer will be updated during training.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">Embedding</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">trainable</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_values</span> <span class="o">=</span> <span class="n">init_values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">table_loader</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookup_table</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="Embedding.call"><a class="viewcode-back" href="../../legonet.html#legonet.layers.Embedding.call">[docs]</a>    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct the layer in tensorflow graph.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow: Deprecated, will be ignored. (Default value = None)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Output of this layer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">variable_op_scope</span><span class="p">([</span><span class="n">flow</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">&#39;Embedding&#39;</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">table_loader</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_values</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;loader&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lookup_table</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span>
+                    <span class="s1">&#39;lookup_table&#39;</span><span class="p">,</span>
+                    <span class="n">initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">table_loader</span><span class="p">,</span>
+                    <span class="n">trainable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainable</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lookup_table</span><span class="p">)</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">initialize_variables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">feed_dict</span><span class="o">=</span><span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_loader</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_values</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reuse</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_shape</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">)</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">MODEL_INPUTS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">embedding_lookup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lookup_table</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+
+        <span class="n">tf</span><span class="o">.</span><span class="n">add_to_collection</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">GraphKeys</span><span class="o">.</span><span class="n">ACTIVATIONS</span><span class="p">,</span> <span class="n">flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">flow</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  <li><a href="../legonet.html">legonet</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Author.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
