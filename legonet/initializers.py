@@ -18,8 +18,13 @@ from tensorflow import uniform_unit_scaling_initializer as uniform_unit_scaling
 
 def get(name):
     """Return an array filler according to name.
-    :param name: the name of initializer.
-    :return: the initializer corresponding to `name`.
+
+    Args:
+        name: the name of initializer.
+
+    Returns:
+        the initializer corresponding to `name`.
+
     """
     
     if name not in _initializers:

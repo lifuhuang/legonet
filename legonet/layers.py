@@ -17,7 +17,7 @@ from . import GraphKeys
 class Layer(Node):
     """Abstract base class for all kinds of layers.
     
-    This class is an abstract base class and is intended to be used only as an 
+    This class is an abstract base class and is intended to be used only as an
     interface for its derived classes. So, do not directly use it in neural
     network.
     """
@@ -26,10 +26,13 @@ class Layer(Node):
 
     def __init__(self, name=None, trainable=True):
         """Initialize attributes in Layer.
-        
+
         This method should be called in the constructor of derived classes.
-        :param name: name of this `Layer`. Use default name if `None` is given.
-        :param trainable: Indicates whether the parameters of this layer will be updated during training.
+
+        Args:
+          name: name of this `Layer`. Use default name if `None` is given.
+          trainable: Indicates whether the parameters of this layer will be updated during training.
+
         """
 
         super(Layer, self).__init__(name)
@@ -40,29 +43,36 @@ class Layer(Node):
         """Construct the Layer in tensorflow graph.
         
         This method is intended to be implemented in derived classes.
-        :param flow: The input tensor.
-        :return: Output of this layer.
+
+        Args:
+          flow: The input tensor.
+
+        Returns:
+          Output of this layer.
+
         """
 
         raise NotImplementedError
 
 
 class FullyConnected(Layer):
-    """A simple fully connected feedforward layer.
-    """
+    """A simple fully connected feedforward layer."""
 
     def __init__(self, n_output_units, activation_fn=None, weight_init=None, bias_init=None, weight_regularizer=None,
                  bias_regularizer=None, has_bias=True, name=None, trainable=True):
         """Initializes a new FullyConnected instance.
-        :param n_output_units: Number of output units.
-        :param activation_fn: A `str`, `callable`, or `None`.
-        :param weight_init: A `str`, `callable`, or `None`. Use `xavier` as default if `None` is passed.
-        :param bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
-        :param weight_regularizer: A `callable` or `None`.
-        :param bias_regularizer: A `callable` or `None`.
-        :param has_bias: Indicates whether there are bias units in this layer.
-        :param name: Name of this Layer. Use default if `None` is passed.
-        :param trainable: Indicates whether the parameters of this layer will be updated during training.
+
+        Args:
+          n_output_units: Number of output units.
+          activation_fn: A `str`, `callable`, or `None`.
+          weight_init: A `str`, `callable`, or `None`. Use `xavier` as default if `None` is passed.
+          bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
+          weight_regularizer: A `callable` or `None`.
+          bias_regularizer: A `callable` or `None`.
+          has_bias: Indicates whether there are bias units in this layer.
+          name: Name of this Layer. Use default if `None` is passed.
+          trainable: Indicates whether the parameters of this layer will be updated during training.
+
         """
 
         if activation_fn is None:
@@ -105,8 +115,13 @@ class FullyConnected(Layer):
 
     def call(self, flow):
         """Construct the layer in tensorflow graph.
-        :param flow: The input tensor.
-        :return: Output of this layer.
+
+        Args:
+          flow: The input tensor.
+
+        Returns:
+          Output of this layer.
+
         """
 
         with tf.variable_op_scope([flow], self.name, 'FC', reuse=self.reuse):
@@ -148,26 +163,28 @@ class FullyConnected(Layer):
 
 
 class Convolution(Layer):
-    """Convolution layer for 2D arrays.
-    """
+    """Convolution layer for 2D arrays."""
 
     def __init__(self, filter_shape, n_output_channels, activation_fn='relu', strides=None, padding='SAME',
                  weight_init=None, bias_init=None, weight_regularizer=None, bias_regularizer=None,
                  use_cudnn_on_gpu=True, has_bias=True, name=None, trainable=True):
         """Initializes a new Convolution instance.
-        :param filter_shape: A sequence with two elements.
-        :param n_output_channels: Number of output channels.
-        :param activation_fn: A `str`, `callable`, or `None`.
-        :param strides: A sequence with two elements. Defaults to `[1, 1]`.
-        :param padding: Either `SAME` or `VALID`.
-        :param weight_init: A `str`, `callable`, or `None`. Use `xavier_conv2d` as default if `None` is passed.
-        :param bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
-        :param weight_regularizer: A `callable` or `None`.
-        :param bias_regularizer: A `callable` or `None`.
-        :param use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.
-        :param has_bias: Indicates whether there are bias units in this layer.
-        :param name: Name of this Layer. Use default name if `None` is passed.
-        :param trainable: Indicates whether the parameters of this layer will be updated during training.
+
+        Args:
+          filter_shape: A sequence with two elements.
+          n_output_channels: Number of output channels.
+          activation_fn: A `str`, `callable`, or `None`.
+          strides: A sequence with two elements. Defaults to `[1, 1]`.
+          padding: Either `SAME` or `VALID`.
+          weight_init: A `str`, `callable`, or `None`. Use `xavier_conv2d` as default if `None` is passed.
+          bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
+          weight_regularizer: A `callable` or `None`.
+          bias_regularizer: A `callable` or `None`.
+          use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.
+          has_bias: Indicates whether there are bias units in this layer.
+          name: Name of this Layer. Use default name if `None` is passed.
+          trainable: Indicates whether the parameters of this layer will be updated during training.
+
         """
 
         if strides is None:
@@ -215,8 +232,13 @@ class Convolution(Layer):
 
     def call(self, flow):
         """Construct the layer in tensorflow graph.
-        :param flow: The input tensor
-        :return: Output of this layer.
+
+        Args:
+          flow: The input tensor
+
+        Returns:
+          Output of this layer.
+
         """
 
         with tf.variable_op_scope([flow], self.name, 'Conv', reuse=self.reuse):
@@ -261,16 +283,18 @@ class Convolution(Layer):
 
 
 class Pooling(Layer):
-    """Pooling layer for 2D arrays.
-    """
+    """Pooling layer for 2D arrays."""
 
     def __init__(self, pool_shape=None, strides=None, mode='max', padding='VALID', name=None):
         """Initializes a new Pooling instance.
-        :param pool_shape: A sequence with two elements. Defaults to [2, 2].
-        :param strides: A sequence with two elements. Defaults to [2, 2].
-        :param mode: Either `max` or `average`.
-        :param padding: Either `SAME` or `VALID`.
-        :param name: The name of this layer. Use default name if `None` is given.
+
+        Args:
+          pool_shape: A sequence with two elements. Defaults to [2, 2].
+          strides: A sequence with two elements. Defaults to [2, 2].
+          mode: Either `max` or `average`.
+          padding: Either `SAME` or `VALID`.
+          name: The name of this layer. Use default name if `None` is given.
+
         """
 
         super(Pooling, self).__init__(name)
@@ -292,8 +316,13 @@ class Pooling(Layer):
 
     def call(self, flow):
         """Construct the layer in tensorflow graph.
-        :param flow: The input tensor.
-        :return: Output of this layer.
+
+        Args:
+          flow: The input tensor.
+
+        Returns:
+          Output of this layer.
+
         """
 
         with tf.variable_op_scope([flow], self.name, 'Pool', reuse=self.reuse):
@@ -311,14 +340,16 @@ class Pooling(Layer):
 
 
 class Input(Layer):
-    """Input layer.
-    """
+    """Input layer."""
 
     def __init__(self, input_shape, input_dtype=tf.float32, name=None):
         """Initializes a new Input instance.
-        :param input_shape: A sequence or an `int`.
-        :param input_dtype: The data type of input. Defaults to `float32`.
-        :param name: The name of this layer. Use default name if `None` is passed.
+
+        Args:
+          input_shape: A sequence or an `int`.
+          input_dtype: The data type of input. Defaults to `float32`.
+          name: The name of this layer. Use default name if `None` is passed.
+
         """
 
         if isinstance(input_shape, int):
@@ -331,8 +362,13 @@ class Input(Layer):
 
     def call(self, flow=None):
         """Construct the layer in tensorflow graph.
-        :param flow: Deprecated, will be ignored.
-        :return: Output of this layer.
+
+        Args:
+          flow: Deprecated, will be ignored. (Default value = None)
+
+        Returns:
+          Output of this layer.
+
         """
 
         with tf.variable_op_scope([], self.name, 'Input', reuse=self.reuse):
@@ -346,15 +382,17 @@ class Input(Layer):
 
 
 class Embedding(Layer):
-    """Embedding layer.
-    """
+    """Embedding layer."""
 
     def __init__(self, input_shape, init_values, name=None, trainable=True):
         """Initializes a new Input instance.
-        :param input_shape: A sequence with two elements.
-        :param init_values: A array used to initialize lookup table.
-        :param name: The name of this layer. Use default name if `None` is passed.
-        :param trainable: Indicates whether the parameters of this layer will be updated during training.
+
+        Args:
+          input_shape: A sequence with two elements.
+          init_values: A array used to initialize lookup table.
+          name: The name of this layer. Use default name if `None` is passed.
+          trainable: Indicates whether the parameters of this layer will be updated during training.
+
         """
 
         super(Embedding, self).__init__(name, trainable)
@@ -367,8 +405,13 @@ class Embedding(Layer):
 
     def call(self, flow=None):
         """Construct the layer in tensorflow graph.
-        :param flow: Deprecated, will be ignored.
-        :return: Output of this layer.
+
+        Args:
+          flow: Deprecated, will be ignored. (Default value = None)
+
+        Returns:
+          Output of this layer.
+
         """
 
         with tf.variable_op_scope([flow], self.name, 'Embedding', reuse=self.reuse):

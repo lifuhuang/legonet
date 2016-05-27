@@ -11,8 +11,13 @@ import tensorflow as tf
 
 def identity(x):
     """Return the input tensor without any change.
-    :param x: Input tensor.
-    :return: The input tensor.
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        The input tensor.
+
     """
 
     return x
@@ -20,8 +25,13 @@ def identity(x):
 
 def relu(x):
     """Compute the rectified linear of x.
-    :param x: Input tensor.
-    :return: A `Tensor` of same shape as `x`.
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        A `Tensor` of same shape as `x`.
+
     """
 
     return tf.nn.relu(x)
@@ -29,8 +39,13 @@ def relu(x):
 
 def tanh(x):
     """Compute the hyperbolic tangent of x.
-    :param x: Input tensor.
-    :return: A `Tensor` of same shape as `x`.
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        A `Tensor` of same shape as `x`.
+
     """
 
     return tf.tanh(x)
@@ -38,8 +53,13 @@ def tanh(x):
 
 def sigmoid(x):
     """Compute the sigmoid of x.
-    :param x: Input tensor.
-    :return: A `Tensor` of same shape as `x`.
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        A `Tensor` of same shape as `x`.
+
     """
 
     return tf.sigmoid(x)
@@ -47,8 +67,13 @@ def sigmoid(x):
 
 def softmax(x):
     """Compute the softmax of x.
-    :param x: Input tensor.
-    :return: A `Tensor` of same shape as `x`.
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        A `Tensor` of same shape as `x`.
+
     """
 
     return tf.nn.softmax(x)
@@ -63,8 +88,13 @@ _activations = {'relu': relu,
 
 def get(name):
     """Return activation according to name.
-    :param name: name of activation function.
-    :return: the activation according to `name`.
+
+    Args:
+        name: name of activation function.
+
+    Returns:
+        the activation according to `name`.
+
     """
     
     if name not in _activations:

@@ -7,8 +7,7 @@ Created on Sat Apr 23 16:09:59 2016
 
 
 class GraphKeys:
-    """Standard names to use for graph collections.
-    """
+    """Standard names to use for graph collections."""
     
     MODEL_INPUTS = "model_inputs"
 
