@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Apr 25 12:17:32 2016
-
-@author: lifu
+This module contains various kinds of optimizers used for updating parameters in neural networks.
 """
 
 

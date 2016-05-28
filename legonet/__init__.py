@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 23 16:09:59 2016
-
-@author: lifu
+Initialization script for legonet package. This file also contains some global constants used for this package.
 """
 
 

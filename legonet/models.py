@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 23 16:09:59 2016
-
-@author: lifu
+This module contains different models, which are the interface for training and using neural networks.
 """
 
 
@@ -21,7 +19,7 @@ class NeuralNetwork(object):
     """Base classes of all neural networks."""
 
     def __init__(self, optimizer, log_dir=None, output_fn="softmax", loss_fn="sparse_softmax_cross_entropy",
-                 target_dtype=tf.int64, model=None, graph=None, session=None):
+                 target_dtype=tf.int64, topology=None, graph=None, session=None):
         """Initialize a new instance of NeuralNetwork.
 
         Args:
@@ -31,21 +29,21 @@ class NeuralNetwork(object):
         is a common choice. Do not impose any output function to output if `None` is given.
             loss_fn: A 'str', `callable`. Will use `sparse_softmax_cross_entropy` as default if `None` is given.
             target_dtype: The data type of targets.
-            model: A `Node` object representing the topological structure of this neural network in the highest
+            topology: A `Node` object representing the topological structure of this neural network in the highest
         level. Will generate a new `Sequential` object as default if `None` is given.
             graph: A TensorFlow `Graph`, will create a new one if `None` is given.
             session: A TensorFlow `Session`, will create a new one if `None` is given.
 
         """
 
-        if model is None:
-            model = Sequential('core')
+        if topology is None:
+            topology = Sequential('core')
 
-        self.model = model
-        self.optimizer = optimizer
-        self.log_dir = log_dir
+        self._topology = topology
+        self._optimizer = optimizer
+        self._log_dir = log_dir
 
-        self.target_dtype = target_dtype
+        self._target_dtype = target_dtype
 
         # functions
         if isinstance(output_fn, str):
@@ -63,28 +61,27 @@ class NeuralNetwork(object):
             raise ValueError("loss_fn should be either a str or callable")
 
         # placeholders
-        self.input = None
-        self.targets = None
+        self._input = None
+        self._targets = None
 
         # tensors        
-        self.output = None
-        self.unregularized_loss = None
-        self.loss = None
-        self.global_step = None
-        self.update_op = None
-        self.merged_summaries = None
-        self.saver = None
+        self._output = None
+        self._unregularized_loss = None
+        self._loss = None
+        self._global_step = None
+        self._update_op = None
+        self._merged_summaries = None
+        self._saver = None
 
-        self.graph = graph if graph else tf.Graph()
-        self.session = session if session else tf.Session(graph=self.graph)
+        self._graph = graph if graph else tf.Graph()
+        self._session = session if session else tf.Session(graph=self._graph)
 
-        self.built = False
+        self._built = False
 
     def __del__(self):
-        """Destructor of NeuralNetwork.
-        """
+        """Destructor of NeuralNetwork."""
 
-        self.session.close()
+        self._session.close()
 
     def load_checkpoint(self, path=None):
         """Load checkpoint from a file or directory.
@@ -99,7 +96,7 @@ class NeuralNetwork(object):
 
         if os.path.isdir(path):
             path = tf.train.latest_checkpoint(path)
-        self.saver.restore(self.session, path)
+        self._saver.restore(self._session, path)
 
     def fit(self, x, y, n_epochs=5, batch_size=32, checkpoint_dir=None, randomized=True, freq_log=100,
             freq_checkpoint=10000, loss_decay=0.0):
@@ -123,17 +120,17 @@ class NeuralNetwork(object):
 
         assert x.shape[0] == y.shape[0]
 
-        if not self.built:
+        if not self._built:
             raise ValueError("Model has not been built.")
 
-        if self.log_dir is None:
+        if self._log_dir is None:
             sw_train = None
         else:
             sw_train = tf.train.SummaryWriter(
-                os.path.join(self.log_dir, 'train'))
+                os.path.join(self._log_dir, 'train'))
 
         epoch_size = x.shape[0]
-        step = self.session.run(self.global_step)
+        step = self._session.run(self._global_step)
         ema_loss = None
         try:
             for _ in xrange(n_epochs * epoch_size):
@@ -148,14 +145,14 @@ class NeuralNetwork(object):
                 y_batch = y[batch_indices]
 
                 # update
-                fetches = [self.update_op, self.global_step]
-                feed_dict = {self.input: x_batch,
-                             self.targets: y_batch}
+                fetches = [self._update_op, self._global_step]
+                feed_dict = {self._input: x_batch,
+                             self._targets: y_batch}
 
-                _, step = self.session.run(fetches, feed_dict=feed_dict)
+                _, step = self._session.run(fetches, feed_dict=feed_dict)
                 if step % freq_log == 0:
-                    fetches = [self.merged_summaries, self.loss]
-                    summary, batch_loss = self.session.run(fetches, feed_dict)
+                    fetches = [self._merged_summaries, self._loss]
+                    summary, batch_loss = self._session.run(fetches, feed_dict)
 
                     msg = 'Step: {0}, training loss: {1}'.format(step, batch_loss)
                     if loss_decay == 0:
@@ -175,7 +172,7 @@ class NeuralNetwork(object):
                         os.makedirs(checkpoint_dir)
                     checkpoint_path = os.path.join(
                         checkpoint_dir, 'checkpoint')
-                    cp_path = self.saver.save(self.session, checkpoint_path, step)
+                    cp_path = self._saver.save(self._session, checkpoint_path, step)
                     print 'A checkpoint has been saved to {0}'.format(cp_path)
         except KeyboardInterrupt:
             print 'Training process terminated by keyboard interrupt.'
@@ -194,63 +191,63 @@ class NeuralNetwork(object):
 
         """
 
-        return self.session.run(self.output, feed_dict={self.input: x})
+        return self._session.run(self._output, feed_dict={self._input: x})
 
     def build(self):
         """Construct the whole neural network in tensorflow graph."""
 
-        with self.graph.as_default():
-            with self.session.as_default():
+        with self._graph.as_default():
+            with self._session.as_default():
                 # TODO: create collection of outputs
-                raw_output = self.model.call()
+                raw_output = self._topology.call()
 
                 all_vars_before = set(tf.all_variables())
                 # keep record of input/output of model
-                self.input = tf.get_collection(GraphKeys.MODEL_INPUTS)[0]
-                self.output = self._output_fn(raw_output)
-                self.targets = tf.placeholder(self.target_dtype, name='target')
-                self.unregularized_loss = self._loss_fn(raw_output, self.targets)
+                self._input = tf.get_collection(GraphKeys.MODEL_INPUTS)[0]
+                self._output = self._output_fn(raw_output)
+                self._targets = tf.placeholder(self._target_dtype, name='target')
+                self._unregularized_loss = self._loss_fn(raw_output, self._targets)
 
                 # build graph at network level
                 reg_losses = tf.get_collection(
                     tf.GraphKeys.REGULARIZATION_LOSSES)
-                self.loss = tf.add_n(
-                    [self.unregularized_loss] + reg_losses, name='loss')
+                self._loss = tf.add_n(
+                    [self._unregularized_loss] + reg_losses, name='loss')
 
-                self.global_step = tf.get_variable(
+                self._global_step = tf.get_variable(
                     'global_step', [], tf.int64,
                     initializer=tf.zeros_initializer,
                     trainable=False)
 
-                self.update_op = self.optimizer.minimize(self.loss, global_step=self.global_step)
+                self._update_op = self._optimizer.minimize(self._loss, global_step=self._global_step)
 
                 # summaries
                 for activation in tf.get_collection(tf.GraphKeys.ACTIVATIONS):
                     tf.histogram_summary(activation.name, activation)
                     tf.scalar_summary('{0} sparsity'.format(activation.name), tf.nn.zero_fraction(activation))
-                tf.scalar_summary("Loss", self.loss)
-                self.merged_summaries = tf.merge_all_summaries()
+                tf.scalar_summary("Loss", self._loss)
+                self._merged_summaries = tf.merge_all_summaries()
                 all_vars_after = set(tf.all_variables())
                 tf.initialize_variables(all_vars_after - all_vars_before).run()
-                self.saver = tf.train.Saver()
-                self.graph.finalize()
+                self._saver = tf.train.Saver()
+                self._graph.finalize()
 
-        if self.log_dir is not None:
-            sw = tf.train.SummaryWriter(self.log_dir, graph=self.graph)
-            print 'Graph visualization has been saved to {0}'.format(self.log_dir)
+        if self._log_dir is not None:
+            sw = tf.train.SummaryWriter(self._log_dir, graph=self._graph)
+            print 'Graph visualization has been saved to {0}'.format(self._log_dir)
             sw.close()
 
-        self.built = True
+        self._built = True
 
     def add(self, layer):
         """Add a layer to the model inside this NeuralNetwork.
 
         Args:
-            layer: a Layer instance
+            layer: a `Layer` instance.
 
         Returns:
             None
 
         """
 
-        self.model.add(layer)
+        self._topology.add(layer)

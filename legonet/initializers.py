@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 23 16:10:50 2016
-
-@author: lifu
+This module contains initializers used for initializing parameters in neural network layers.
 """
 
 

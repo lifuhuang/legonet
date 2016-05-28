@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 23 16:09:59 2016
-
-@author: lifu
+This module contains various kinds of objective functions used as loss functions for neural networks.
 """
 
 

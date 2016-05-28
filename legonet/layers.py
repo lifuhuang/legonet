@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 23 23:17:39 2016
-
-@author: lifu
+This module contains all kinds of layers which are used in a neural network model. These layers are all derived from an
+abstract base class `Layer`, which itself is derived from the abstract class `Node`. These layers can either be added to
+container `Node`(including `NeuralNetwork`) or be called directly in a functional style.
 """
 
 
@@ -20,6 +20,11 @@ class Layer(Node):
     This class is an abstract base class and is intended to be used only as an
     interface for its derived classes. So, do not directly use it in neural
     network.
+
+    Attributes:
+        trainable: Indicates whether the parameters of this layer will be updated during training.
+        params: List of all parameters in this `Layer`. The list will be empty before the `Layer` being called for the
+        first time.
     """
 
     # TODO: add operators: +, &
@@ -84,10 +89,10 @@ class FullyConnected(Layer):
 
         super(FullyConnected, self).__init__(name, trainable)
 
-        self.n_output_units = n_output_units
-        self.has_bias = has_bias
-        self.W = None
-        self.b = None
+        self._n_output_units = n_output_units
+        self._has_bias = has_bias
+        self._weight = None
+        self._bias = None
 
         if isinstance(activation_fn, str):
             self._activation_fn = activations.get(activation_fn)
@@ -127,31 +132,31 @@ class FullyConnected(Layer):
         with tf.variable_op_scope([flow], self.name, 'FC', reuse=self.reuse):
             prev_size = flow.get_shape()[1:].num_elements()
             if not self.reuse:
-                self.W = tf.get_variable(
+                self._weight = tf.get_variable(
                     'W',
-                    [prev_size, self.n_output_units],
+                    [prev_size, self._n_output_units],
                     initializer=self._weight_init,
                     regularizer=self._weight_regularizer,
                     trainable=self.trainable)
-                self.params.append(self.W)
-                tf.add_to_collection(tf.GraphKeys.WEIGHTS, self.W)
+                self.params.append(self._weight)
+                tf.add_to_collection(tf.GraphKeys.WEIGHTS, self._weight)
 
-                if self.has_bias:
-                    self.b = tf.get_variable(
+                if self._has_bias:
+                    self._bias = tf.get_variable(
                         'b',
-                        [self.n_output_units],
+                        [self._n_output_units],
                         initializer=self._bias_init,
                         regularizer=self._bias_regularizer,
                         trainable=self.trainable)
-                    self.params.append(self.b)
-                    tf.add_to_collection(tf.GraphKeys.BIASES, self.b)
+                    self.params.append(self._bias)
+                    tf.add_to_collection(tf.GraphKeys.BIASES, self._bias)
 
                 self.reuse = True
 
             with tf.name_scope('affine'):
                 flat_input = tf.reshape(flow, (-1, prev_size))
-                flow = tf.matmul(flat_input, self.W)
-                flow = tf.nn.bias_add(flow, self.b)
+                flow = tf.matmul(flat_input, self._weight)
+                flow = tf.nn.bias_add(flow, self._bias)
                 tf.initialize_variables(self.params).run()
 
             if self._activation_fn is not None:
@@ -196,12 +201,12 @@ class Convolution(Layer):
 
         super(Convolution, self).__init__(name, trainable)
 
-        self.filter_shape = list(filter_shape)
-        self.n_output_channels = n_output_channels
-        self.strides = list(strides)
-        self.padding = padding
-        self.use_cudnn_on_gpu = use_cudnn_on_gpu
-        self.has_bias = has_bias
+        self._filter_shape = list(filter_shape)
+        self._n_output_channels = n_output_channels
+        self._strides = list(strides)
+        self._padding = padding
+        self._use_cudnn_on_gpu = use_cudnn_on_gpu
+        self._has_bias = has_bias
 
         self.filter = None
         self.bias = None
@@ -243,7 +248,7 @@ class Convolution(Layer):
 
         with tf.variable_op_scope([flow], self.name, 'Conv', reuse=self.reuse):
             if not self.reuse:
-                full_shape = self.filter_shape + [flow.get_shape()[-1].value, self.n_output_channels]
+                full_shape = self._filter_shape + [flow.get_shape()[-1].value, self._n_output_channels]
                 self.filter = tf.get_variable(
                     'filter',
                     full_shape,
@@ -253,10 +258,10 @@ class Convolution(Layer):
                 self.params.append(self.filter)
                 tf.add_to_collection(tf.GraphKeys.WEIGHTS, self.filter)
 
-                if self.has_bias:
+                if self._has_bias:
                     self.bias = tf.get_variable(
                         'bias',
-                        self.n_output_channels,
+                        self._n_output_channels,
                         initializer=self._bias_init,
                         regularizer=self._bias_regularizer,
                         trainable=self.trainable)
@@ -269,9 +274,9 @@ class Convolution(Layer):
             flow = tf.nn.conv2d(
                 flow,
                 self.filter,
-                [1] + self.strides + [1],
-                self.padding,
-                self.use_cudnn_on_gpu)
+                [1] + self._strides + [1],
+                self._padding,
+                self._use_cudnn_on_gpu)
 
             flow = tf.nn.bias_add(flow, self.bias)
 
@@ -303,9 +308,9 @@ class Pooling(Layer):
             pool_shape = [2, 2]
         if strides is None:
             strides = [2, 2]
-        self.pool_shape = list(pool_shape)
-        self.strides = list(strides)
-        self.padding = padding
+        self._pool_shape = list(pool_shape)
+        self._strides = list(strides)
+        self._padding = padding
 
         if mode == 'max':
             self._pool_fn = tf.nn.max_pool
@@ -331,9 +336,9 @@ class Pooling(Layer):
 
             flow = self._pool_fn(
                 flow,
-                [1] + self.pool_shape + [1],
-                [1] + self.strides + [1],
-                self.padding)
+                [1] + self._pool_shape + [1],
+                [1] + self._strides + [1],
+                self._padding)
 
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, flow)
         return flow
@@ -357,8 +362,8 @@ class Input(Layer):
 
         super(Input, self).__init__(name)
 
-        self.input_shape = list(input_shape)
-        self.input_dtype = input_dtype
+        self._input_shape = list(input_shape)
+        self._input_dtype = input_dtype
 
     def call(self, flow=None):
         """Construct the layer in tensorflow graph.
@@ -374,7 +379,7 @@ class Input(Layer):
         with tf.variable_op_scope([], self.name, 'Input', reuse=self.reuse):
             if not self.reuse:
                 self.reuse = True
-            flow = tf.placeholder(self.input_dtype, [None] + self.input_shape, 'input')
+            flow = tf.placeholder(self._input_dtype, [None] + self._input_shape, 'input')
             tf.add_to_collection(GraphKeys.MODEL_INPUTS, flow)
 
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, flow)
@@ -397,11 +402,11 @@ class Embedding(Layer):
 
         super(Embedding, self).__init__(name, trainable)
 
-        self.init_values = init_values
-        self.input_shape = list(input_shape)
+        self._init_values = init_values
+        self._input_shape = list(input_shape)
 
-        self.table_loader = None
-        self.lookup_table = None
+        self._table_loader = None
+        self._lookup_table = None
 
     def call(self, flow=None):
         """Construct the layer in tensorflow graph.
@@ -416,18 +421,18 @@ class Embedding(Layer):
 
         with tf.variable_op_scope([flow], self.name, 'Embedding', reuse=self.reuse):
             if not self.reuse:
-                self.table_loader = tf.placeholder(tf.float32, shape=self.init_values.shape, name='loader')
-                self.lookup_table = tf.get_variable(
+                self._table_loader = tf.placeholder(tf.float32, shape=self._init_values.shape, name='loader')
+                self._lookup_table = tf.get_variable(
                     'lookup_table',
-                    initializer=self.table_loader,
+                    initializer=self._table_loader,
                     trainable=self.trainable)
-                self.params.append(self.lookup_table)
-                tf.initialize_variables(self.params).run(feed_dict={self.table_loader: self.init_values})
+                self.params.append(self._lookup_table)
+                tf.initialize_variables(self.params).run(feed_dict={self._table_loader: self._init_values})
                 self.reuse = True
 
-            flow = tf.placeholder(tf.int64, [None] + self.input_shape, 'input')
+            flow = tf.placeholder(tf.int64, [None] + self._input_shape, 'input')
             tf.add_to_collection(GraphKeys.MODEL_INPUTS, flow)
-            flow = tf.nn.embedding_lookup(self.lookup_table, flow)
+            flow = tf.nn.embedding_lookup(self._lookup_table, flow)
 
         tf.add_to_collection(tf.GraphKeys.ACTIVATIONS, flow)
         return flow

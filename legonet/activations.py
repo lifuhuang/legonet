@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 23 15:55:04 2016
-
-@author: lifu
+This module contains activation functions used for layers in neural network.
 """
 
 

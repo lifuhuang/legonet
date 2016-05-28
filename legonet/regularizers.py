@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Apr 30 15:41:04 2016
-
-@author: lifu
+This module contains various kinds of regularizers which can be applied to layers in neural networks as a strategy for
+preventing overfit.
 """
 
 

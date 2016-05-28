@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 17 11:12:10 2016
+This module contains the abstract base class `Node` and other topological structures that play the roles of containers
+or layouts in LegoNet. These classes are useful for building complicated non-sequential models, and will enable users to
+build these non-sequential models in the same way as how they build sequential ones(simply calling `add` for times).
 
-@author: lifu
+An alternative to using these topological structures when building non-sequential models is to directly use layers
+in functional style(e.g. ``FullyConnected(128)(input_tensor)``). This method is even more powerful and enables users
+to build more complicated models, but requires more careful design and coding.
+
 """
 
 
@@ -10,7 +15,13 @@ import tensorflow as tf
 
 
 class Node(object):
-    """Base class for all elements in graph."""
+    """Abstract base class for all elements in graph.
+
+    Attributes:
+        name: The name of this `Node`, might be used for visualization. Use default if `None` is passed.
+        reuse: Indicates whether or not this `Node` is in reuse mode.
+
+    """
 
     # TODO: add operators: +, &
 
@@ -43,7 +54,12 @@ class Node(object):
 
 
 class Sequential(Node):
-    """Container Node whose inner nodes are in a sequential layout."""
+    """Container Node whose inner nodes are in a sequential layout.
+
+    Attributes:
+        nodes: a list of `Node` s that are contained in this `Sequential`.
+
+    """
 
     def __init__(self, name=None):
         """Initialize a new instance of Sequential.
@@ -91,7 +107,12 @@ class Sequential(Node):
 
 
 class Parallel(Node):
-    """Container Node whose inner nodes are in a parallel layout."""
+    """Container Node whose inner nodes are in a parallel layout.
+
+    Attributes:
+        nodes: a list of `Node` s that are contained in this `Parallel`.
+
+    """
 
     def __init__(self, name=None, mode='concat', along_dim=None):
         """Initialize a new instance of Parallel.
