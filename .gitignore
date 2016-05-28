@@ -1,1 +1,6 @@
 docs/_build/
+*.pyc
+logs/
+checkpoints/
+.idea/
+MNIST_data/
