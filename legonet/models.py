@@ -20,19 +20,19 @@ class NeuralNetwork(object):
 
     def __init__(self, optimizer, log_dir=None, output_fn="softmax", loss_fn="sparse_softmax_cross_entropy",
                  target_dtype=tf.int64, topology=None, graph=None, session=None):
-        """Initialize a new instance of NeuralNetwork.
+        """Initializes a new instance of NeuralNetwork.
 
         Args:
             optimizer: The optimizer used when training.
-            log_dir: The path of folder to output log files. Will not save log files if `None` is given.
+            log_dir: The path of folder to output log files. Will not save log files if `None` is passed.
             output_fn: A `str` or `callable` that indicates the function imposed on the output of `model`. `softmax`
-        is a common choice. Do not impose any output function to output if `None` is given.
-            loss_fn: A 'str', `callable`. Will use `sparse_softmax_cross_entropy` as default if `None` is given.
+        is a common choice. Do not impose any output function to output if `None` is passed.
+            loss_fn: A 'str', `callable`. Uses `sparse_softmax_cross_entropy` as default if `None` is passed.
             target_dtype: The data type of targets.
             topology: A `Node` object representing the topological structure of this neural network in the highest
-        level. Will generate a new `Sequential` object as default if `None` is given.
-            graph: A TensorFlow `Graph`, will create a new one if `None` is given.
-            session: A TensorFlow `Session`, will create a new one if `None` is given.
+        level. Will generate a new `Sequential` object as default if `None` is passed.
+            graph: A TensorFlow `Graph`, will create a new one if `None` is passed.
+            session: A TensorFlow `Session`, will create a new one if `None` is passed.
 
         """
 
@@ -84,7 +84,7 @@ class NeuralNetwork(object):
         self._session.close()
 
     def load_checkpoint(self, path=None):
-        """Load checkpoint from a file or directory.
+        """Loads checkpoint from a file or directory.
 
         Args:
             path: Path of folder containing checkpoint files. (Default value = None)
@@ -100,7 +100,7 @@ class NeuralNetwork(object):
 
     def fit(self, x, y, n_epochs=5, batch_size=32, checkpoint_dir=None, randomized=True, freq_log=100,
             freq_checkpoint=10000, loss_decay=0.0):
-        """Train this model using x and y.
+        """Trains this model using x and y.
 
         Args:
             x: Input array.
@@ -108,7 +108,7 @@ class NeuralNetwork(object):
             n_epochs: Number of epochs to iterate. (Default value = 5)
             batch_size: Size of mini-batch. (Default value = 32)
             checkpoint_dir: Path to the folder to store checkpoint files. (Default value = None)
-            randomized: Indicates whether use select mini-batch randomly. (Default value = True)
+            randomized: Indicates whether mini-batches will be selected randomly. (Default value = True)
             freq_log: The frequency of logging. (Default value = 100)
             freq_checkpoint: The frequency of saving parameters to checkpoint files. (Default value = 10000)
             loss_decay: The decay rate used for displaying exponential moving average of loss. (Default value = 0.0)
@@ -181,7 +181,7 @@ class NeuralNetwork(object):
                 sw_train.close()
 
     def predict(self, x):
-        """Output result given input.
+        """Outputs result given input.
 
         Args:
             x: Input array.
@@ -194,12 +194,12 @@ class NeuralNetwork(object):
         return self._session.run(self._output, feed_dict={self._input: x})
 
     def build(self):
-        """Construct the whole neural network in tensorflow graph."""
+        """Constructs the whole neural network in tensorflow graph."""
 
         with self._graph.as_default():
             with self._session.as_default():
                 # TODO: create collection of outputs
-                raw_output = self._topology.call()
+                raw_output = self._topology()
 
                 all_vars_before = set(tf.all_variables())
                 # keep record of input/output of model
@@ -240,7 +240,7 @@ class NeuralNetwork(object):
         self._built = True
 
     def add(self, layer):
-        """Add a layer to the model inside this NeuralNetwork.
+        """Adds a layer to the model inside this NeuralNetwork.
 
         Args:
             layer: a `Layer` instance.

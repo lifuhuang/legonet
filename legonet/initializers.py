@@ -15,7 +15,7 @@ from tensorflow import uniform_unit_scaling_initializer as uniform_unit_scaling
 
 
 def get(name):
-    """Return an array filler according to name.
+    """Returns an array filler according to name.
 
     Args:
         name: the name of initializer.

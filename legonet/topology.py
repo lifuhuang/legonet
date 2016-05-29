@@ -26,7 +26,7 @@ class Node(object):
     # TODO: add operators: +, &
 
     def __init__(self, name=None):
-        """Initialize a new Node instance.
+        """Initializes a new Node instance.
         
         Since Node is a abstract class, this method should only be called by
         its derived classes.
@@ -39,8 +39,8 @@ class Node(object):
         self.name = name
         self.reuse = False
 
-    def call(self, flow):
-        """Construct the Node in tensorflow graph.
+    def __call__(self, flow):
+        """Constructs the Node in tensorflow graph.
 
         Args:
             flow: The input `Tensor` to this `Node`.
@@ -62,7 +62,7 @@ class Sequential(Node):
     """
 
     def __init__(self, name=None):
-        """Initialize a new instance of Sequential.
+        """Initializes a new instance of Sequential.
 
         Args:
             name: Name of this `Node`. Use default name if `None` is passed.
@@ -73,8 +73,8 @@ class Sequential(Node):
 
         self.nodes = []
 
-    def call(self, flow=None):
-        """Construct the Sequential and its `Node` s.
+    def __call__(self, flow=None):
+        """Constructs the Sequential and its `Node` s.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)
@@ -88,12 +88,12 @@ class Sequential(Node):
             if not self.reuse:
                 self.reuse = True
             for node in self.nodes:
-                flow = node.call(flow)
+                flow = node(flow)
 
         return flow
 
     def add(self, node):
-        """Add a node to this network.
+        """Adds a node to this network.
 
         Args:
             node: A `Node` object.
@@ -115,7 +115,7 @@ class Parallel(Node):
     """
 
     def __init__(self, name=None, mode='concat', along_dim=None):
-        """Initialize a new instance of Parallel.
+        """Initializes a new instance of Parallel.
 
         Args:
             name: Name of this `Node`. Use default name if `None` is passed.
@@ -135,8 +135,8 @@ class Parallel(Node):
         self.mode = mode
         self.along_dim = along_dim
 
-    def call(self, flow=None):
-        """Construct the Sequential and its nodes.
+    def __call__(self, flow=None):
+        """Constructs the Sequential and its nodes.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)
@@ -153,7 +153,7 @@ class Parallel(Node):
 
             outputs = []
             for i, node in enumerate(self.nodes):
-                outputs.append(node.call(flow))
+                outputs.append(node(flow))
 
             if self.mode == 'concat':
                 return tf.concat(self.along_dim, outputs)
@@ -163,7 +163,7 @@ class Parallel(Node):
                 return tf.add_n(outputs)
 
     def add(self, node):
-        """Add a `Node` to this network.
+        """Adds a `Node` to this network.
 
         Args:
             node: A `Node` object.

@@ -8,7 +8,7 @@ import tensorflow as tf
 
 
 def identity(x):
-    """Return the input tensor without any change.
+    """Returns the input tensor without any change.
 
     Args:
         x: Input tensor.
@@ -22,7 +22,7 @@ def identity(x):
 
 
 def relu(x):
-    """Compute the rectified linear of x.
+    """Computes the rectified linear of x.
 
     Args:
         x: Input tensor.
@@ -36,7 +36,7 @@ def relu(x):
 
 
 def tanh(x):
-    """Compute the hyperbolic tangent of x.
+    """Computes the hyperbolic tangent of x.
 
     Args:
         x: Input tensor.
@@ -50,7 +50,7 @@ def tanh(x):
 
 
 def sigmoid(x):
-    """Compute the sigmoid of x.
+    """Computes the sigmoid of x.
 
     Args:
         x: Input tensor.
@@ -64,7 +64,7 @@ def sigmoid(x):
 
 
 def softmax(x):
-    """Compute the softmax of x.
+    """Computes the softmax of x.
 
     Args:
         x: Input tensor.

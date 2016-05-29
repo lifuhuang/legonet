@@ -73,7 +73,7 @@ _objectives = {'softmax_cross_entropy': softmax_cross_entropy,
 
 
 def get(name):
-    """Return loss according to name.
+    """Returns loss according to name.
 
     Args:
         name: The name of the loss function.

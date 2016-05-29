@@ -30,12 +30,12 @@ class Layer(Node):
     # TODO: add operators: +, &
 
     def __init__(self, name=None, trainable=True):
-        """Initialize attributes in Layer.
+        """Initializes attributes in `Layer`.
 
         This method should be called in the constructor of derived classes.
 
         Args:
-            name: name of this `Layer`. Use default name if `None` is given.
+            name: name of this `Layer`. Uses default name if `None` is given.
             trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
@@ -44,13 +44,13 @@ class Layer(Node):
         self.trainable = trainable
         self.params = []
 
-    def call(self, flow):
-        """Construct the Layer in tensorflow graph.
+    def __call__(self, flow):
+        """Construct the Layer in `Tensorflow` graph.
         
         This method is intended to be implemented in derived classes.
 
         Args:
-            flow: The input tensor.
+            flow: The input `Tensor`.
 
         Returns:
             Output of this layer.
@@ -61,7 +61,13 @@ class Layer(Node):
 
 
 class FullyConnected(Layer):
-    """A simple fully connected feedforward layer."""
+    """A simple fully connected layer.
+
+    Fully connected layer(a.k.a. dense layer) performs an affine transformation using a weight matrix(usually denoted as
+    `W`) and adds a bias array(usually denoted as `b`) to the input `Tensor`, possibly followed by an activation
+    function, which is necessary except that `FullyConnected` is used as the output layer(i.e. the last layer in the
+    model).
+    """
 
     def __init__(self, n_output_units, activation_fn=None, weight_init=None, bias_init=None, weight_regularizer=None,
                  bias_regularizer=None, has_bias=True, name=None, trainable=True):
@@ -70,12 +76,12 @@ class FullyConnected(Layer):
         Args:
             n_output_units: Number of output units.
             activation_fn: A `str`, `callable`, or `None`.
-            weight_init: A `str`, `callable`, or `None`. Use `xavier` as default if `None` is passed.
-            bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
+            weight_init: A `str`, `callable`, or `None`. Uses `xavier` as default if `None` is passed.
+            bias_init: A `str`, `callable`, or `None`. Uses `constant` as default if `None` is passed.
             weight_regularizer: A `callable` or `None`.
             bias_regularizer: A `callable` or `None`.
             has_bias: Indicates whether there are bias units in this layer.
-            name: Name of this Layer. Use default if `None` is passed.
+            name: Name of this Layer. Uses default if `None` is passed.
             trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
@@ -118,11 +124,11 @@ class FullyConnected(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
 
-    def call(self, flow):
-        """Construct the layer in tensorflow graph.
+    def __call__(self, flow):
+        """Applies this `FullyConnected` to the input `Tensor` and return the output `Tensor`.
 
         Args:
-            flow: The input tensor.
+            flow: The input `Tensor`.
 
         Returns:
             Output of this layer.
@@ -168,7 +174,12 @@ class FullyConnected(Layer):
 
 
 class Convolution(Layer):
-    """Convolution layer for 2D arrays."""
+    """Convolution layer for 2D arrays.
+
+    Convolution layer is the core layer in Convolutional Neural Network. It performs a 2D convolution operation using a
+    2D filter(a.k.a convolution kernel) and adds a bias array(usually denoted as `b`) to the input `Tensor`, possibly
+    followed by an activation function(often ReLU in latest research).
+    """
 
     def __init__(self, filter_shape, n_output_channels, activation_fn='relu', strides=None, padding='SAME',
                  weight_init=None, bias_init=None, weight_regularizer=None, bias_regularizer=None,
@@ -181,13 +192,13 @@ class Convolution(Layer):
             activation_fn: A `str`, `callable`, or `None`.
             strides: A sequence with two elements. Defaults to `[1, 1]`.
             padding: Either `SAME` or `VALID`.
-            weight_init: A `str`, `callable`, or `None`. Use `xavier_conv2d` as default if `None` is passed.
-            bias_init: A `str`, `callable`, or `None`. Use `constant` as default if `None` is passed.
+            weight_init: A `str`, `callable`, or `None`. Uses `xavier_conv2d` as default if `None` is passed.
+            bias_init: A `str`, `callable`, or `None`. Uses `constant` as default if `None` is passed.
             weight_regularizer: A `callable` or `None`.
             bias_regularizer: A `callable` or `None`.
             use_cudnn_on_gpu: Indicates whether the convolution operation uses cudnn on GPU.
             has_bias: Indicates whether there are bias units in this layer.
-            name: Name of this Layer. Use default name if `None` is passed.
+            name: Name of this Layer. Uses default name if `None` is passed.
             trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
@@ -235,11 +246,11 @@ class Convolution(Layer):
         self._weight_regularizer = weight_regularizer
         self._bias_regularizer = bias_regularizer
 
-    def call(self, flow):
-        """Construct the layer in tensorflow graph.
+    def __call__(self, flow):
+        """Applies this layer to the input `Tensor` and return the output `Tensor`.
 
         Args:
-            flow: The input tensor
+            flow: The input `Tensor`.
 
         Returns:
             Output of this layer.
@@ -288,7 +299,12 @@ class Convolution(Layer):
 
 
 class Pooling(Layer):
-    """Pooling layer for 2D arrays."""
+    """Pooling layer for 2D arrays.
+
+    Pooling layer is one of the most important components in a convolutional neural network. It reduces size of the
+    input `Tensor` by sampling one element and discarding others in every fix-sized area(called `pool`) of it with two
+    different sampling strategy(`max pooling` and `average pooling`).
+    """
 
     def __init__(self, pool_shape=None, strides=None, mode='max', padding='VALID', name=None):
         """Initializes a new Pooling instance.
@@ -298,7 +314,7 @@ class Pooling(Layer):
             strides: A sequence with two elements. Defaults to [2, 2].
             mode: Either `max` or `average`.
             padding: Either `SAME` or `VALID`.
-            name: The name of this layer. Use default name if `None` is given.
+            name: The name of this layer. Uses default name if `None` is given.
 
         """
 
@@ -319,11 +335,11 @@ class Pooling(Layer):
         else:
             raise ValueError('Unrecognized pooling mode {0}'.format(mode))
 
-    def call(self, flow):
-        """Construct the layer in tensorflow graph.
+    def __call__(self, flow):
+        """Applies pooling layer to the input `Tensor` and return the output `Tensor`.
 
         Args:
-            flow: The input tensor.
+            flow: The input `Tensor`.
 
         Returns:
             Output of this layer.
@@ -345,7 +361,10 @@ class Pooling(Layer):
 
 
 class Input(Layer):
-    """Input layer."""
+    """Input layer takes the input `Tensor` and pass it to the subsequent layers.
+
+    This layer performs no transformation to the input and is used only for the purpose of placeholder.
+    """
 
     def __init__(self, input_shape, input_dtype=tf.float32, name=None):
         """Initializes a new Input instance.
@@ -353,7 +372,7 @@ class Input(Layer):
         Args:
             input_shape: A sequence or an `int`.
             input_dtype: The data type of input. Defaults to `float32`.
-            name: The name of this layer. Use default name if `None` is passed.
+            name: The name of this layer. Uses default name if `None` is passed.
 
         """
 
@@ -365,11 +384,11 @@ class Input(Layer):
         self._input_shape = list(input_shape)
         self._input_dtype = input_dtype
 
-    def call(self, flow=None):
-        """Construct the layer in tensorflow graph.
+    def __call__(self, flow=None):
+        """Construct the layer in `Tensorflow` graph.
 
         Args:
-            flow: Deprecated, will be ignored. (Default value = None)
+            flow: This argument is ignored. (Default value = None)
 
         Returns:
             Output of this layer.
@@ -387,7 +406,12 @@ class Input(Layer):
 
 
 class Embedding(Layer):
-    """Embedding layer."""
+    """Embedding layer uses the underlying mechanism provided by `TensorFlow` to parallel lookups on a list of tensors.
+
+    It is very useful for tasks where the input of (subsequent) model is just a list of tensors chosen from a predefined
+    table(e.g. word vectors in NLP tasks), and is especially useful when you want to fine-tune this table during the
+    training process by enabling error message being propagated to tensors in this table.
+    """
 
     def __init__(self, input_shape, init_values, name=None, trainable=True):
         """Initializes a new Input instance.
@@ -395,7 +419,7 @@ class Embedding(Layer):
         Args:
             input_shape: A sequence with two elements.
             init_values: A array used to initialize lookup table.
-            name: The name of this layer. Use default name if `None` is passed.
+            name: The name of this layer. Uses default name if `None` is passed.
             trainable: Indicates whether the parameters of this layer will be updated during training.
 
         """
@@ -408,11 +432,11 @@ class Embedding(Layer):
         self._table_loader = None
         self._lookup_table = None
 
-    def call(self, flow=None):
-        """Construct the layer in tensorflow graph.
+    def __call__(self, flow=None):
+        """Construct the layer in `Tensorflow` graph.
 
         Args:
-            flow: Deprecated, will be ignored. (Default value = None)
+            flow: This argument is ignored. (Default value = None)
 
         Returns:
             Output of this layer.
