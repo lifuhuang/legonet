@@ -16,7 +16,7 @@ from .topology import Sequential
 
 
 class NeuralNetwork(object):
-    """Base classes of all neural networks."""
+    """The basic neural network model."""
 
     def __init__(self, optimizer, log_dir=None, output_fn="softmax", loss_fn="sparse_softmax_cross_entropy",
                  target_dtype=tf.int64, topology=None, graph=None, session=None):

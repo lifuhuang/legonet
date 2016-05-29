@@ -45,7 +45,7 @@ class Layer(Node):
         self.params = []
 
     def __call__(self, flow):
-        """Construct the Layer in `Tensorflow` graph.
+        """Constructs the Layer in `Tensorflow` graph.
         
         This method is intended to be implemented in derived classes.
 
@@ -63,9 +63,9 @@ class Layer(Node):
 class FullyConnected(Layer):
     """A simple fully connected layer.
 
-    Fully connected layer(a.k.a. dense layer) performs an affine transformation using a weight matrix(usually denoted as
-    `W`) and adds a bias array(usually denoted as `b`) to the input `Tensor`, possibly followed by an activation
-    function, which is necessary except that `FullyConnected` is used as the output layer(i.e. the last layer in the
+    Fully connected layer (a.k.a. dense layer) performs an affine transformation to the input `Tensor` using a weight
+    matrix (usually denoted as `W`) and a bias vector (usually denoted as `b`), possibly followed by an activation
+    function, which is necessary except that `FullyConnected` is used as the output layer (i.e. the last layer in the
     model).
     """
 
@@ -125,7 +125,7 @@ class FullyConnected(Layer):
         self._bias_regularizer = bias_regularizer
 
     def __call__(self, flow):
-        """Applies this `FullyConnected` to the input `Tensor` and return the output `Tensor`.
+        """Applies this `FullyConnected` to the input `Tensor` and returns the output `Tensor`.
 
         Args:
             flow: The input `Tensor`.
@@ -177,8 +177,8 @@ class Convolution(Layer):
     """Convolution layer for 2D arrays.
 
     Convolution layer is the core layer in Convolutional Neural Network. It performs a 2D convolution operation using a
-    2D filter(a.k.a convolution kernel) and adds a bias array(usually denoted as `b`) to the input `Tensor`, possibly
-    followed by an activation function(often ReLU in latest research).
+    2D filter (a.k.a convolution kernel) and adds a bias array (usually denoted as `b`) to the input `Tensor`, possibly
+    followed by an activation function (often ReLU in latest research).
     """
 
     def __init__(self, filter_shape, n_output_channels, activation_fn='relu', strides=None, padding='SAME',
@@ -247,7 +247,7 @@ class Convolution(Layer):
         self._bias_regularizer = bias_regularizer
 
     def __call__(self, flow):
-        """Applies this layer to the input `Tensor` and return the output `Tensor`.
+        """Applies this layer to the input `Tensor` and returns the output `Tensor`.
 
         Args:
             flow: The input `Tensor`.
@@ -301,9 +301,11 @@ class Convolution(Layer):
 class Pooling(Layer):
     """Pooling layer for 2D arrays.
 
-    Pooling layer is one of the most important components in a convolutional neural network. It reduces size of the
-    input `Tensor` by sampling one element and discarding others in every fix-sized area(called `pool`) of it with two
-    different sampling strategy(`max pooling` and `average pooling`).
+    Pooling layer is one of the most important components in a convolutional neural network. It is used for reducing the
+    size of the input tensor, so as to lower the argument number and to reduce redundant information. The process is to
+    generate one scalar from every fix-sized area (called `pool`) in the input `Tensor` and combine all scalars to a new
+    `Tensor` as the output of pooling layer. There are two choices for the pooling strategy: `max pooling` and `average
+    pooling`.
     """
 
     def __init__(self, pool_shape=None, strides=None, mode='max', padding='VALID', name=None):
@@ -336,7 +338,7 @@ class Pooling(Layer):
             raise ValueError('Unrecognized pooling mode {0}'.format(mode))
 
     def __call__(self, flow):
-        """Applies pooling layer to the input `Tensor` and return the output `Tensor`.
+        """Applies pooling layer to the input `Tensor` and returns the output `Tensor`.
 
         Args:
             flow: The input `Tensor`.
@@ -385,7 +387,7 @@ class Input(Layer):
         self._input_dtype = input_dtype
 
     def __call__(self, flow=None):
-        """Construct the layer in `Tensorflow` graph.
+        """Constructs the layer in `Tensorflow` graph.
 
         Args:
             flow: This argument is ignored. (Default value = None)
@@ -409,7 +411,7 @@ class Embedding(Layer):
     """Embedding layer uses the underlying mechanism provided by `TensorFlow` to parallel lookups on a list of tensors.
 
     It is very useful for tasks where the input of (subsequent) model is just a list of tensors chosen from a predefined
-    table(e.g. word vectors in NLP tasks), and is especially useful when you want to fine-tune this table during the
+    table (e.g. word vectors in NLP tasks), and is especially useful when you want to fine-tune this table during the
     training process by enabling error message being propagated to tensors in this table.
     """
 
@@ -433,7 +435,7 @@ class Embedding(Layer):
         self._lookup_table = None
 
     def __call__(self, flow=None):
-        """Construct the layer in `Tensorflow` graph.
+        """Constructs the layer in `Tensorflow` graph.
 
         Args:
             flow: This argument is ignored. (Default value = None)

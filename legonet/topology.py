@@ -26,9 +26,9 @@ class Node(object):
     # TODO: add operators: +, &
 
     def __init__(self, name=None):
-        """Initializes a new Node instance.
+        """Initializes a new `Node` instance.
         
-        Since Node is a abstract class, this method should only be called by
+        Since `Node` is a abstract class, this method should only be called by
         its derived classes.
 
         Args:
@@ -40,7 +40,7 @@ class Node(object):
         self.reuse = False
 
     def __call__(self, flow):
-        """Constructs the Node in tensorflow graph.
+        """Constructs the `Node` in tensorflow graph and applies this
 
         Args:
             flow: The input `Tensor` to this `Node`.
@@ -54,7 +54,7 @@ class Node(object):
 
 
 class Sequential(Node):
-    """Container Node whose inner nodes are in a sequential layout.
+    """Container `Node` whose inner nodes are in a sequential layout.
 
     Attributes:
         nodes: a list of `Node` s that are contained in this `Sequential`.
@@ -74,7 +74,7 @@ class Sequential(Node):
         self.nodes = []
 
     def __call__(self, flow=None):
-        """Constructs the Sequential and its `Node` s.
+        """Constructs the Sequential and its inner `Node` s.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)
@@ -107,7 +107,7 @@ class Sequential(Node):
 
 
 class Parallel(Node):
-    """Container Node whose inner nodes are in a parallel layout.
+    """Container `Node` whose inner nodes are in a parallel layout.
 
     Attributes:
         nodes: a list of `Node` s that are contained in this `Parallel`.
@@ -119,7 +119,7 @@ class Parallel(Node):
 
         Args:
             name: Name of this `Node`. Use default name if `None` is passed.
-            mode: The way to merge paralleled `Node`s. Now supports "concat", "sum", "mean".
+            mode: The way to merge paralleled `Node` s. Now supports "concat", "sum", "mean".
             along_dim: The dimension along which the merging operation will be done. Only take effect in "concat"
         mode.
 
@@ -136,7 +136,7 @@ class Parallel(Node):
         self.along_dim = along_dim
 
     def __call__(self, flow=None):
-        """Constructs the Sequential and its nodes.
+        """Constructs the Sequential and its inner nodes.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)
