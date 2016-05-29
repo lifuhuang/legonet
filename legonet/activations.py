@@ -85,7 +85,7 @@ _activations = {'relu': relu,
 
 
 def get(name):
-    """Return activation according to name.
+    """Returns activation according to name.
 
     Args:
         name: name of activation function.
