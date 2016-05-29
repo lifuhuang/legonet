@@ -6,6 +6,8 @@ container `Node`(including `NeuralNetwork`) or be called directly in a functiona
 """
 
 
+import abc
+
 import tensorflow as tf
 
 from . import initializers
@@ -44,6 +46,7 @@ class Layer(Node):
         self.trainable = trainable
         self.params = []
 
+    @abc.abstractmethod
     def __call__(self, flow):
         """Constructs the Layer in `Tensorflow` graph.
         
@@ -57,7 +60,7 @@ class Layer(Node):
 
         """
 
-        raise NotImplementedError
+        pass
 
 
 class FullyConnected(Layer):

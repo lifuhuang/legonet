@@ -11,6 +11,8 @@ to build more complicated models, but requires more careful design and coding.
 """
 
 
+import abc
+
 import tensorflow as tf
 
 
@@ -24,6 +26,8 @@ class Node(object):
     """
 
     # TODO: add operators: +, &
+
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, name=None):
         """Initializes a new `Node` instance.
@@ -39,6 +43,7 @@ class Node(object):
         self.name = name
         self.reuse = False
 
+    @abc.abstractmethod
     def __call__(self, flow):
         """Constructs the `Node` in tensorflow graph and applies this
 
@@ -46,23 +51,55 @@ class Node(object):
             flow: The input `Tensor` to this `Node`.
 
         Returns:
-            None
+            The output `Tensor` of this `Node`.
 
         """
 
-        raise NotImplementedError
+        pass
 
 
-class Sequential(Node):
-    """Container `Node` whose inner nodes are in a sequential layout.
+class Layout(Node):
+    """Abstract base class for all kinds of layouts.
+
+    Layout is a special kind of `Node`, which itself contains other `Node`s (including `Layout` s). Different `Layout` s
+    might use different strategies for how its inner `Node` s are connected, but looking from the outside, `Layout` acts
+    totally the same as other `Node` s. They are very useful for constructing complicated non-sequential neural network
+    models.
 
     Attributes:
-        nodes: a list of `Node` s that are contained in this `Sequential`.
+        nodes: a list of `Node` s that are contained within a `Layout` instance.
 
     """
 
     def __init__(self, name=None):
-        """Initializes a new instance of Sequential.
+        """Initializes a new `Layout` instance.
+
+        Args:
+            name: Name of this `Layout`. Use default name if `None` is passed.
+        """
+
+        super(Layout, self).__init__(name)
+        self.nodes = []
+
+    def add(self, node):
+        """Adds a node to this `Layout`.
+
+        Args:
+            node: A `Node` object.
+
+        Returns:
+            None
+
+        """
+
+        self.nodes.append(node)
+
+
+class Sequential(Layout):
+    """Layout `Node` whose inner nodes are in a sequential layout."""
+
+    def __init__(self, name=None):
+        """Initializes a new `Sequential` instance.
 
         Args:
             name: Name of this `Node`. Use default name if `None` is passed.
@@ -80,7 +117,7 @@ class Sequential(Node):
             flow: Input `Tensor` object. (Default value = None)
 
         Returns:
-            Output of this `Node`.
+            Output of this `Sequential`.
 
         """
 
@@ -92,27 +129,9 @@ class Sequential(Node):
 
         return flow
 
-    def add(self, node):
-        """Adds a node to this network.
 
-        Args:
-            node: A `Node` object.
-
-        Returns:
-            None
-
-        """
-
-        self.nodes.append(node)
-
-
-class Parallel(Node):
-    """Container `Node` whose inner nodes are in a parallel layout.
-
-    Attributes:
-        nodes: a list of `Node` s that are contained in this `Parallel`.
-
-    """
+class Parallel(Layout):
+    """Layout `Node` whose inner nodes are in a parallel layout."""
 
     def __init__(self, name=None, mode='concat', along_dim=None):
         """Initializes a new instance of Parallel.
@@ -142,7 +161,7 @@ class Parallel(Node):
             flow: Input `Tensor` object. (Default value = None)
 
         Returns:
-            Output of this `Node`.
+            Output of this `Parallel`.
 
         """
 
@@ -161,16 +180,3 @@ class Parallel(Node):
                 return tf.add_n(outputs) / len(self.nodes)
             elif self.mode == 'sum':
                 return tf.add_n(outputs)
-
-    def add(self, node):
-        """Adds a `Node` to this network.
-
-        Args:
-            node: A `Node` object.
-
-        Returns:
-            None
-
-        """
-
-        self.nodes.append(node)
