@@ -12,16 +12,15 @@ import tensorflow as tf
 
 from . import initializers
 from . import activations
-from .topology import Piece
+from .pieces import Piece
 from . import GraphKeys
 
 
 class Layer(Piece):
     """Abstract base class for all kinds of layers.
     
-    This class is an abstract base class and is intended to be used only as an
-    interface for its derived classes. So, do not directly use it in neural
-    network.
+    This class is an abstract base class and is intended to be used only as an interface for its derived classes. So, do
+    not directly use it in neural network.
 
     Attributes:
         trainable: Indicates whether the parameters of this layer will be updated during training.

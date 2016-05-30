@@ -12,7 +12,7 @@ import tensorflow as tf
 from . import activations
 from . import objectives
 from . import GraphKeys
-from .topology import Sequential
+from .pieces import Sequential
 
 
 class NeuralNetwork(object):
