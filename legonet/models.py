@@ -187,7 +187,7 @@ class NeuralNetwork(object):
             x: Input array.
 
         Returns:
-            None
+            Predicted result.
 
         """
 
