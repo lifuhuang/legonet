@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 This module contains all kinds of layers which are used in a neural network model. These layers are all derived from an
-abstract base class `Layer`, which itself is derived from the abstract class `Node`. These layers can either be added to
-container `Node`(including `NeuralNetwork`) or be called directly in a functional style.
+abstract base class `Layer`, which itself is derived from the abstract class `Piece`. These layers can either be added
+to container `Piece`(including `NeuralNetwork`) or be called directly in a functional style.
 """
 
 
@@ -12,11 +12,11 @@ import tensorflow as tf
 
 from . import initializers
 from . import activations
-from .topology import Node
+from .topology import Piece
 from . import GraphKeys
 
 
-class Layer(Node):
+class Layer(Piece):
     """Abstract base class for all kinds of layers.
     
     This class is an abstract base class and is intended to be used only as an

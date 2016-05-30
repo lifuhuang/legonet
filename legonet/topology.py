@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This module contains the abstract base class `Node` and other topological structures that play the roles of containers
+This module contains the abstract base class `Piece` and other topological structures that play the roles of containers
 or layouts in LegoNet. These classes are useful for building complicated non-sequential models, and will enable users to
 build these non-sequential models in the same way as how they build sequential ones(simply calling `add` for times).
 
@@ -16,12 +16,12 @@ import abc
 import tensorflow as tf
 
 
-class Node(object):
+class Piece(object):
     """Abstract base class for all elements in graph.
 
     Attributes:
-        name: The name of this `Node`, might be used for visualization. Use default if `None` is passed.
-        reuse: Indicates whether or not this `Node` is in reuse mode.
+        name: The name of this `Piece`, might be used for visualization. Use default if `None` is passed.
+        reuse: Indicates whether or not this `Piece` is in reuse mode.
 
     """
 
@@ -30,13 +30,13 @@ class Node(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, name=None):
-        """Initializes a new `Node` instance.
+        """Initializes a new `Piece` instance.
         
-        Since `Node` is a abstract class, this method should only be called by
+        Since `Piece` is a abstract class, this method should only be called by
         its derived classes.
 
         Args:
-            name: Name of this `Node`. Use default name if `None` is passed.
+            name: Name of this `Piece`. Use default name if `None` is passed.
 
         """
 
@@ -45,73 +45,73 @@ class Node(object):
 
     @abc.abstractmethod
     def __call__(self, flow):
-        """Constructs the `Node` in tensorflow graph and applies this
+        """Constructs this `Piece` in a `TensorFlow` graph.
 
         Args:
-            flow: The input `Tensor` to this `Node`.
+            flow: The input `Tensor` to this `Piece`.
 
         Returns:
-            The output `Tensor` of this `Node`.
+            The output `Tensor` of this `Piece`.
 
         """
 
         pass
 
 
-class Layout(Node):
+class Plate(Piece):
     """Abstract base class for all kinds of layouts.
 
-    Layout is a special kind of `Node`, which itself contains other `Node`s (including `Layout` s). Different `Layout` s
-    might use different strategies for how its inner `Node` s are connected, but looking from the outside, `Layout` acts
-    totally the same as other `Node` s. They are very useful for constructing complicated non-sequential neural network
-    models.
+    Plate is a special kind of `Piece`, which itself contains other `Piece`s (including other `Plate` s). Different
+    `Plate` s might use different strategies for how its inner `Piece` s are connected, but looking from the outside,
+    `Plate` acts totally the same as other `Piece` s. They are very useful for constructing complicated non-sequential
+    neural network models.
 
     Attributes:
-        nodes: a list of `Node` s that are contained within a `Layout` instance.
+        child_pieces: a list of `Piece` s that are contained within a `Plate` instance.
 
     """
 
     def __init__(self, name=None):
-        """Initializes a new `Layout` instance.
+        """Initializes a new `Plate` instance.
 
         Args:
-            name: Name of this `Layout`. Use default name if `None` is passed.
+            name: Name of this `Plate`. Use default name if `None` is passed.
         """
 
-        super(Layout, self).__init__(name)
-        self.nodes = []
+        super(Plate, self).__init__(name)
+        self.child_pieces = []
 
-    def add(self, node):
-        """Adds a node to this `Layout`.
+    def add(self, piece):
+        """Adds a `Piece` to this `Plate`.
 
         Args:
-            node: A `Node` object.
+            piece: A `Piece` object.
 
         Returns:
             None
 
         """
 
-        self.nodes.append(node)
+        self.child_pieces.append(piece)
 
 
-class Sequential(Layout):
-    """Layout `Node` whose inner nodes are in a sequential layout."""
+class Sequential(Plate):
+    """A `Plate` whose inner `Piece` s are in a sequential layout."""
 
     def __init__(self, name=None):
         """Initializes a new `Sequential` instance.
 
         Args:
-            name: Name of this `Node`. Use default name if `None` is passed.
+            name: Name of this `Piece`. Use default name if `None` is passed.
 
         """
 
         super(Sequential, self).__init__(name)
 
-        self.nodes = []
+        self.child_pieces = []
 
     def __call__(self, flow=None):
-        """Constructs the Sequential and its inner `Node` s.
+        """Constructs the Sequential and its inner `Piece` s.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)
@@ -124,21 +124,21 @@ class Sequential(Layout):
         with tf.variable_op_scope([flow], self.name, 'Sequential', reuse=self.reuse):
             if not self.reuse:
                 self.reuse = True
-            for node in self.nodes:
-                flow = node(flow)
+            for piece in self.child_pieces:
+                flow = piece(flow)
 
         return flow
 
 
-class Parallel(Layout):
-    """Layout `Node` whose inner nodes are in a parallel layout."""
+class Parallel(Plate):
+    """A `Plate` whose inner pieces are in a parallel layout."""
 
     def __init__(self, name=None, mode='concat', along_dim=None):
         """Initializes a new instance of Parallel.
 
         Args:
-            name: Name of this `Node`. Use default name if `None` is passed.
-            mode: The way to merge paralleled `Node` s. Now supports "concat", "sum", "mean".
+            name: Name of this `Piece`. Use default name if `None` is passed.
+            mode: The way to merge paralleled `Piece` s. Now supports "concat", "sum", "mean".
             along_dim: The dimension along which the merging operation will be done. Only take effect in "concat"
         mode.
 
@@ -148,14 +148,14 @@ class Parallel(Layout):
             raise ValueError('Must specify along_dim for concat mode.')
         super(Parallel, self).__init__(name)
 
-        self.nodes = []
+        self.child_pieces = []
         if mode not in ['concat', 'sum', 'mean']:
             raise ValueError('Unknown mode: {0}'.format(mode))
         self.mode = mode
         self.along_dim = along_dim
 
     def __call__(self, flow=None):
-        """Constructs the Sequential and its inner nodes.
+        """Constructs the Sequential and its inner pieces.
 
         Args:
             flow: Input `Tensor` object. (Default value = None)
@@ -165,18 +165,18 @@ class Parallel(Layout):
 
         """
 
-        # build graph at node level
+        # build inner pieces.
         with tf.variable_op_scope([], self.name, 'Parallel', reuse=self.reuse):
             if not self.reuse:
                 self.reuse = True
 
             outputs = []
-            for i, node in enumerate(self.nodes):
-                outputs.append(node(flow))
+            for i, piece in enumerate(self.child_pieces):
+                outputs.append(piece(flow))
 
             if self.mode == 'concat':
                 return tf.concat(self.along_dim, outputs)
             elif self.mode == 'mean':
-                return tf.add_n(outputs) / len(self.nodes)
+                return tf.add_n(outputs) / len(self.child_pieces)
             elif self.mode == 'sum':
                 return tf.add_n(outputs)

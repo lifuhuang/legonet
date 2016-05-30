@@ -19,27 +19,27 @@ class NeuralNetwork(object):
     """The basic neural network model."""
 
     def __init__(self, optimizer, log_dir=None, output_fn="softmax", loss_fn="sparse_softmax_cross_entropy",
-                 target_dtype=tf.int64, topology=None, graph=None, session=None):
+                 target_dtype=tf.int64, base_plate=None, graph=None, session=None):
         """Initializes a new instance of NeuralNetwork.
 
         Args:
             optimizer: The optimizer used when training.
-            log_dir: The path of folder to output log files. Will not save log files if `None` is passed.
+            log_dir: The path of folder to output log files. Log files will not be saved if `None` is passed.
             output_fn: A `str` or `callable` that indicates the function imposed on the output of `model`. `softmax`
         is a common choice. Do not impose any output function to output if `None` is passed.
             loss_fn: A 'str', `callable`. Uses `sparse_softmax_cross_entropy` as default if `None` is passed.
             target_dtype: The data type of targets.
-            topology: A `Node` object representing the topological structure of this neural network in the highest
-        level. Will generate a new `Sequential` object as default if `None` is passed.
-            graph: A TensorFlow `Graph`, will create a new one if `None` is passed.
-            session: A TensorFlow `Session`, will create a new one if `None` is passed.
+            base_plate: A `Plate` object representing the topological structure of this neural network in the highest
+        level. A new `Sequential` object will be generated as default if `None` is passed.
+            graph: A `TensorFlow` `Graph` object. A new `Graph` will be generated if `None` is passed.
+            session: A `TensorFlow` `Session` object. A new `Session will be generated if `None` is passed.
 
         """
 
-        if topology is None:
-            topology = Sequential('core')
+        if base_plate is None:
+            base_plate = Sequential('core')
 
-        self._topology = topology
+        self._base_plate = base_plate
         self._optimizer = optimizer
         self._log_dir = log_dir
 
@@ -194,12 +194,13 @@ class NeuralNetwork(object):
         return self._session.run(self._output, feed_dict={self._input: x})
 
     def build(self):
-        """Constructs the whole neural network in tensorflow graph."""
+        """Constructs the whole neural network in `TensorFlow` graph."""
 
         with self._graph.as_default():
             with self._session.as_default():
-                # TODO: create collection of outputs
-                raw_output = self._topology()
+                # TODO: supports multiple outputs and inputs
+
+                raw_output = self._base_plate()
 
                 all_vars_before = set(tf.all_variables())
                 # keep record of input/output of model
@@ -239,15 +240,15 @@ class NeuralNetwork(object):
 
         self._built = True
 
-    def add(self, layer):
-        """Adds a layer to the model inside this NeuralNetwork.
+    def add(self, piece):
+        """Adds a `Piece` to the base plate of this NeuralNetwork.
 
         Args:
-            layer: a `Layer` instance.
+            piece: a `Piece` instance.
 
         Returns:
             None
 
         """
 
-        self._topology.add(layer)
+        self._base_plate.add(piece)
