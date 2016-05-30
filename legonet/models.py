@@ -48,7 +48,7 @@ class NeuralNetwork(object):
         # functions
         if isinstance(output_fn, str):
             self._output_fn = activations.get(output_fn)
-        elif callable(output_fn):
+        elif callable(output_fn) or output_fn is None:
             self._output_fn = output_fn
         else:
             raise ValueError("output_fn should be either a str or callable")
@@ -205,7 +205,7 @@ class NeuralNetwork(object):
                 all_vars_before = set(tf.all_variables())
                 # keep record of input/output of model
                 self._input = tf.get_collection(GraphKeys.MODEL_INPUTS)[0]
-                self._output = self._output_fn(raw_output)
+                self._output = self._output_fn(raw_output) if self._output_fn is not None else raw_output
                 self._targets = tf.placeholder(self._target_dtype, name='target')
                 self._unregularized_loss = self._loss_fn(raw_output, self._targets)
 
