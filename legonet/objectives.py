@@ -53,8 +53,12 @@ def sigmoid_cross_entropy(logits, targets):
 
     """
 
-    loss = tf.nn.sigmoid_cross_entropy_with_logits(logits, targets)
-    return tf.reduce_mean(loss[targets != -1])
+    logits = tf.reshape(logits, [-1])
+    targets = tf.reshape(targets, [-1])
+    all_losses = tf.nn.sigmoid_cross_entropy_with_logits(logits, targets)
+    # TODO: find better way of doing this
+    valid_losses = all_losses * tf.cast(tf.not_equal(targets, -1), tf.float32)
+    return tf.reduce_mean(valid_losses)
 
 
 def mean_square(output, targets):
