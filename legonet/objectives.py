@@ -7,19 +7,20 @@ This module contains various kinds of objective functions used as loss functions
 import tensorflow as tf
 
 
-def softmax_cross_entropy(logits, labels):
+def softmax_cross_entropy(logits, targets):
     """Cross-entropy error for softmax output layer.
 
     Args:
         logits: Unscaled log probabilities.
-        labels: Each row must be a valid probability distribution.
+        targets: Each row must be either a valid probability distribution or all zeros. If all zeros, the
+        corresponding loss term will not be added to the result.
 
     Returns:
         A scalar indicating the cross-entropy error.
 
     """
     
-    return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, labels))
+    return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits, targets))
 
 
 def sparse_softmax_cross_entropy(logits, labels):
@@ -27,7 +28,8 @@ def sparse_softmax_cross_entropy(logits, labels):
 
     Args:
         logits: Unscaled log probabilities.
-        labels: Each element must be a class index.
+        labels: Each element must be a index within range [0, n_classes - 1] or -1. If -1, the corresponding loss term
+        will not be added to the result.
 
     Returns:
         A scalar indicating the cross-entropy error.
@@ -42,14 +44,17 @@ def sigmoid_cross_entropy(logits, targets):
 
     Args:
         logits: The `Tensor` passed to logistic function.
-        targets: A `Tensor` of the same shape as `logits`.
+        targets: A `Tensor` of the same shape as `logits`. Must be either a value in the range [0, 1] or -1. If -1, the
+        corresponding loss term will not be added to the result.
+
 
     Returns:
-        A scalar indicating the cross-entropy error.
+        A scalar indicating the summed cross-entropy error of all input samples with target not being -1.
 
     """
-    
-    return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits, targets))
+
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(logits, targets)
+    return tf.reduce_mean(loss[targets != -1])
 
 
 def mean_square(output, targets):
