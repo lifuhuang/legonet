@@ -1,2 +1,2 @@
 # legonet
-A super light-weight deep learning library based on TensorFlow.
+A library of higher-level neural network components based on TensorFlow.
